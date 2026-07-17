@@ -36,7 +36,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/ml-explore/mlx-swift.git",
-            from: "0.32.0"
+            from: "0.31.6"
         ),
     ],
     targets: [
