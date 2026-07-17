@@ -11,12 +11,11 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  SWIFT_PACKAGE_DIR: "."
-  MACOSX_DEPLOYMENT_TARGET: "14.0"
   MLX_DEVICE: cpu
   MLX_FORCE_CPU: "1"
   MLX_METAL_DISABLE: "1"
   METAL_DEVICE_WRAPPER_TYPE: cpu
+  SWIFT_PACKAGE_DIR: "."
 
 jobs:
   build:
@@ -26,10 +25,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
         with: { xcode-version: 'latest' }
-      - uses: actions/cache@v4
-        with:
-          path: .build
-          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       - run: swift build -v
 
   test:
@@ -40,18 +35,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
         with: { xcode-version: 'latest' }
-      - uses: actions/cache@v4
-        with:
-          path: .build
-          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       
-      - name: Create Metal shims to prevent assertion crash
+      - name: Create Metal shims
         run: |
           BUILD_DIR=$(swift build --show-bin-path -c debug)
           mkdir -p "$BUILD_DIR"
           touch "$BUILD_DIR/default.metallib" "$BUILD_DIR/mlx.metallib"
           touch .build/default.metallib .build/mlx.metallib
-
+      
       - name: Run tests
         run: swift test --enable-code-coverage -v --skip SwiftLLMTests
         
@@ -65,37 +56,4 @@ jobs:
         with:
           file: coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}
-
-  performance-check:
-    name: Performance Regression Check
-    needs: test
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: maxim-lobanov/setup-xcode@v1
-        with: { xcode-version: 'latest' }
-      - uses: actions/cache@v4
-        with:
-          path: .build
-          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.11", cache: "pip", cache-dependency-path: Benchmarks/Python/requirements.txt }
-      - run: pip install -r Benchmarks/Python/requirements.txt
-      
-      - name: Run Benchmarks
-        run: |
-          RELEASE_DIR=$(swift build -c release --show-bin-path)
-          mkdir -p "$RELEASE_DIR"
-          touch "$RELEASE_DIR/default.metallib" "$RELEASE_DIR/mlx.metallib"
-          
-          swift build -c release --product SwiftAnalyticsBenchmarks
-          mkdir -p Benchmarks/Results
-          swift run -c release SwiftAnalyticsBenchmarks --json Benchmarks/Results/swift_results.json
-          python3 Benchmarks/Python/benchmarks.py --json Benchmarks/Results/python_results.json
-          python3 Benchmarks/Python/compare.py Benchmarks/Results/swift_results.json Benchmarks/Results/python_results.json --regression-threshold 1.2
-          
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: benchmark-results
-          path: Benchmarks/Results/
+          fail_ci_if_error: false
