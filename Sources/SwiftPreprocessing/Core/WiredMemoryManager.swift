@@ -45,7 +45,7 @@ public actor WiredMemoryManager {
     
     /// Scoped helper that executes an operation within an acquired memory ticket,
     /// ensuring the ticket is always cleaned up and cache is cleared.
-    public func withTicket<T>(_ operation: () async throws -> T) async throws -> T {
+    public func withTicket<T: Sendable>(_ operation: () async throws -> T) async throws -> T {
         let ticket = try await acquireTicket()
         let result: T
         do {
