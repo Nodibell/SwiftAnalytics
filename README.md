@@ -28,16 +28,29 @@ The following table presents median execution times on an **Apple Silicon M-seri
 
 | Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
 | :--- | :---: | :---: | :---: | :---: |
+| **Mean** (1M elements) | 0.082 ms | 0.117 ms | 1.43x | 🟢 Swift |
+| **StdDev** (1M elements) | 0.473 ms | 0.505 ms | 1.07x | 🟢 Swift |
+| **Variance** (1M elements) | 0.453 ms | 0.504 ms | 1.11x | 🟢 Swift |
 | **Pearson Correlation** (500k elements) | 0.777 ms | 1.220 ms | 1.57x | 🟢 Swift |
-| **Random Forest fit** (1k samples x 4 features) | 4.630 ms | 23.626 ms | 5.10x | 🟢 Swift |
+| **CSV Read** (100k rows, 5 cols) | 169.470 ms | 18.081 ms | 0.11x | 🔴 Python |
+| **Filter rows** (100k rows) | 29.262 ms | 0.532 ms | 0.02x | 🔴 Python |
+| **GroupBy + sum/mean** (4 groups) | 2.210 ms | 1.572 ms | 0.71x | 🔴 Python |
+| **SortBy double column** (100k rows) | 76.899 ms | 6.285 ms | 0.08x | 🔴 Python |
+| **LinearRegression fit** (10k×10, 100 epochs) | 26.777 ms | 24.064 ms | 0.90x | 🔴 Python |
+| **Random Forest fit** (1k x 4 features, 50 trees) | 4.630 ms | 23.626 ms | 5.10x | 🟢 Swift |
+| **GBDT Regressor fit** (1k x 4, 50 estimators) | 33.453 ms | 30.537 ms | 0.91x | 🔴 Python |
+| **KMeans fit** (10k x 4, 3 clusters) | 42.950 ms | 12.228 ms | 0.28x | 🔴 Python |
+| **PCA SVD fit** (1k×100 → 10 components) | 2.036 ms | 0.755 ms | 0.37x | 🔴 Python |
 | **Holt-Winters fit** (50k points, period=12) | 6.349 ms | 135.124 ms | 21.28x | 🟢 Swift |
 | **ARIMA fit** (50k points) | 2.297 ms | 204.394 ms | 89.00x | 🟢 Swift |
+| **ARIMA forecast horizon=24** (50k points) | 2.388 ms | 206.879 ms | 86.62x | 🟢 Swift |
 | **Kalman Filter 1D** (10k observations) | 44.709 ms | 81.172 ms | 1.82x | 🟢 Swift |
+| **TS Decomposition additive** (1k points) | 0.431 ms | 0.099 ms | 0.23x | 🔴 Python |
+| **LLM Forward Pass** (seqLen=64) | 0.505 ms | 0.513 ms | 1.02x | 🟢 Swift |
+| **LLM Generate** (10 tokens) | 4.924 ms | 3.656 ms | 0.74x | 🔴 Python |
 | **KernelSHAP Explain** (5 features, 100 coalitions) | 0.172 ms | 0.464 ms | 2.69x | 🟢 Swift |
 | **RingLWE Encrypt/Decrypt** (vector size=64) | 0.020 ms | 0.286 ms | 14.28x | 🟢 Swift |
 | **PNNS Classify** (50 DB vectors, size=64) | 0.231 ms | 2.903 ms | 12.54x | 🟢 Swift |
-| **LLM Generate** (10 tokens streaming) | 4.924 ms | 3.656 ms | 0.74x | 🔴 Python |
-| **LLM Forward Pass** (seqLen=64) | 0.505 ms | 0.513 ms | 1.02x | 🟢 Swift |
 
 ---
 

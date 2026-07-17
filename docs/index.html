@@ -483,6 +483,27 @@
                     </thead>
                     <tbody>
                         <tr>
+                            <td><b>Mean</b> (1M elements)</td>
+                            <td>0.082 ms</td>
+                            <td>0.117 ms</td>
+                            <td><span class="speedup-badge winner">1.43x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>StdDev</b> (1M elements)</td>
+                            <td>0.473 ms</td>
+                            <td>0.505 ms</td>
+                            <td><span class="speedup-badge winner">1.07x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>Variance</b> (1M elements)</td>
+                            <td>0.453 ms</td>
+                            <td>0.504 ms</td>
+                            <td><span class="speedup-badge winner">1.11x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
                             <td><b>Pearson Correlation</b> (500k elements)</td>
                             <td>0.777 ms</td>
                             <td>1.220 ms</td>
@@ -490,11 +511,67 @@
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
+                            <td><b>CSV Read</b> (100k rows, 5 cols)</td>
+                            <td>169.470 ms</td>
+                            <td>18.081 ms</td>
+                            <td><span class="speedup-badge loser">0.11x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>Filter Rows</b> (100k rows)</td>
+                            <td>29.262 ms</td>
+                            <td>0.532 ms</td>
+                            <td><span class="speedup-badge loser">0.02x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>GroupBy + sum/mean</b> (4 groups)</td>
+                            <td>2.210 ms</td>
+                            <td>1.572 ms</td>
+                            <td><span class="speedup-badge loser">0.71x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>SortBy Double Column</b> (100k rows)</td>
+                            <td>76.899 ms</td>
+                            <td>6.285 ms</td>
+                            <td><span class="speedup-badge loser">0.08x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>LinearRegression Fit</b> (10k×10, 100 epochs)</td>
+                            <td>26.777 ms</td>
+                            <td>24.064 ms</td>
+                            <td><span class="speedup-badge loser">0.90x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
                             <td><b>Random Forest Fit</b> (1k x 4 features, 50 trees)</td>
                             <td>4.630 ms</td>
                             <td>23.626 ms</td>
                             <td><span class="speedup-badge winner">5.10x</span></td>
                             <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>GBDT Regressor Fit</b> (1k x 4, 50 estimators)</td>
+                            <td>33.453 ms</td>
+                            <td>30.537 ms</td>
+                            <td><span class="speedup-badge loser">0.91x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>KMeans Fit</b> (10k x 4, 3 clusters)</td>
+                            <td>42.950 ms</td>
+                            <td>12.228 ms</td>
+                            <td><span class="speedup-badge loser">0.28x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>PCA SVD Fit</b> (1k×100 → 10 components)</td>
+                            <td>2.036 ms</td>
+                            <td>0.755 ms</td>
+                            <td><span class="speedup-badge loser">0.37x</span></td>
+                            <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>Holt-Winters Fit</b> (50k points, period=12)</td>
@@ -511,11 +588,39 @@
                             <td>🟢 Swift</td>
                         </tr>
                         <tr>
+                            <td><b>ARIMA Forecast Horizon=24</b> (50k points)</td>
+                            <td>2.388 ms</td>
+                            <td>206.879 ms</td>
+                            <td><span class="speedup-badge winner">86.62x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
                             <td><b>Kalman Filter 1D</b> (10k observations)</td>
                             <td>44.709 ms</td>
                             <td>81.172 ms</td>
                             <td><span class="speedup-badge winner">1.82x</span></td>
                             <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>TS Decomposition Additive</b> (1k points)</td>
+                            <td>0.431 ms</td>
+                            <td>0.099 ms</td>
+                            <td><span class="speedup-badge loser">0.23x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                        <tr>
+                            <td><b>LLM Forward Pass</b> (seqLen=64)</td>
+                            <td>0.505 ms</td>
+                            <td>0.513 ms</td>
+                            <td><span class="speedup-badge winner">1.02x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>LLM Generate</b> (10 tokens)</td>
+                            <td>4.924 ms</td>
+                            <td>3.656 ms</td>
+                            <td><span class="speedup-badge loser">0.74x</span></td>
+                            <td>🔴 Python</td>
                         </tr>
                         <tr>
                             <td><b>KernelSHAP Explain</b> (5 features, 100 coalitions)</td>
@@ -537,13 +642,6 @@
                             <td>2.903 ms</td>
                             <td><span class="speedup-badge winner">12.54x</span></td>
                             <td>🟢 Swift</td>
-                        </tr>
-                        <tr>
-                            <td><b>LLM Generate</b> (10 tokens streaming)</td>
-                            <td>4.924 ms</td>
-                            <td>3.656 ms</td>
-                            <td><span class="speedup-badge loser">0.74x</span></td>
-                            <td>🔴 Python</td>
                         </tr>
                     </tbody>
                 </table>
