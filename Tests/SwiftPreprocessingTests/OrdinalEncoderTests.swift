@@ -36,7 +36,7 @@ struct OrdinalEncoderTests {
             ["banana"]
         ]
         
-        try encoder.fit(data)
+        encoder.fit(data)
         let testData = [
             ["cherry"]
         ]

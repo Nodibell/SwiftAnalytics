@@ -19,14 +19,16 @@ struct CKKSTests {
     @Test("CKKS Homomorphic Addition")
     func testCKKSHomomorphicAddition() throws {
         let key = CKKS.generateKey()
-        
+
         let ct1 = CKKS.encrypt(message: 1.25, key: key)
         let ct2 = CKKS.encrypt(message: 3.5, key: key)
-        
+
         let ctSum = try CKKS.add(ct1, ct2)
         let decrypted = key.decrypt(ctSum)
-        
-        #expect(abs(decrypted - 4.75) < 0.01)
+
+        // e1, e2 ∈ [-2,2] незалежно ⇒ |e1+e2| ≤ 4 детерміновано (не ймовірнісно)
+        let maxNoise = 4.0 / CKKS.defaultScale
+        #expect(abs(decrypted - 4.75) < maxNoise + 1e-9)
     }
     
     @Test("CKKS Homomorphic Plaintext Addition")

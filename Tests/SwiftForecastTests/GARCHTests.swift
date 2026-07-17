@@ -24,10 +24,10 @@ struct GARCHTests {
     
     @Test("GARCH parameter validation")
     func testGARCHValidation() throws {
-        #expect(throws: Error.self) {
+        #expect(throws: (any Error).self) {
             _ = try GARCHModel(p: -1, q: 1)
         }
-        #expect(throws: Error.self) {
+        #expect(throws: (any Error).self) {
             _ = try GARCHModel(p: 1, q: -1)
         }
     }

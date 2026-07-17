@@ -22,10 +22,10 @@ struct SARIMATests {
     
     @Test("SARIMA parameter validation")
     func testSARIMAValidation() throws {
-        #expect(throws: Error.self) {
+        #expect(throws: (any Error).self) {
             _ = try SARIMAModel(p: -1, d: 0, q: 0, P: 0, D: 0, Q: 0, s: 4)
         }
-        #expect(throws: Error.self) {
+        #expect(throws: (any Error).self) {
             _ = try SARIMAModel(p: 0, d: 0, q: 0, P: 0, D: 0, Q: 0, s: 0)
         }
     }

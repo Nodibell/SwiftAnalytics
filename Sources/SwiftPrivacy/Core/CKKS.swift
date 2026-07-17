@@ -81,14 +81,14 @@ public struct CKKS: Sendable {
     /// Homomorphically adds two ciphertexts: Enc(m1) + Enc(m2) = Enc(m1 + m2).
     public static func add(_ ct1: CKKSCiphertext, _ ct2: CKKSCiphertext) throws -> CKKSCiphertext {
         guard abs(ct1.scale - ct2.scale) < 1e-5 else {
-            #if canImport(SwiftDataFrame)
+            #if canImport(SwiftML)
             throw SwiftMLError.invalidInput("Cannot add ciphertexts with different scales: \(ct1.scale) vs \(ct2.scale)")
             #else
             throw NSError(domain: "SwiftPrivacy", code: 1, userInfo: [NSLocalizedDescriptionKey: "Different scales"])
             #endif
         }
         guard ct1.q == ct2.q else {
-            #if canImport(SwiftDataFrame)
+            #if canImport(SwiftML)
             throw SwiftMLError.invalidInput("Cannot add ciphertexts with different moduli: \(ct1.q) vs \(ct2.q)")
             #else
             throw NSError(domain: "SwiftPrivacy", code: 2, userInfo: [NSLocalizedDescriptionKey: "Different moduli"])
@@ -109,9 +109,15 @@ public struct CKKS: Sendable {
     /// Homomorphically multiplies by a plaintext scalar: Enc(m) * scalar = Enc(m * scalar).
     /// Scales the ciphertext scale by the scalar scale.
     public static func multiply(_ ct: CKKSCiphertext, by scalar: Double) -> CKKSCiphertext {
-        let sVal = Int(round(scalar * ct.scale))
-        let a = ct.a.map { Int((Int64($0) * Int64(sVal)) % Int64(ct.q)) }
-        let b = Int((Int64(ct.b) * Int64(sVal)) % Int64(ct.q))
+        let qi = Int64(ct.q)
+        let qd = Double(ct.q)
+
+        let sValReduced = (scalar * ct.scale).truncatingRemainder(dividingBy: qd)
+        var sVal = Int64(sValReduced)
+        sVal = ((sVal % qi) + qi) % qi
+
+        let a = ct.a.map { Int((Int64($0) * sVal) % qi) }
+        let b = Int((Int64(ct.b) * sVal) % qi)
         return CKKSCiphertext(a: a, b: b, scale: ct.scale * ct.scale, q: ct.q)
     }
     
