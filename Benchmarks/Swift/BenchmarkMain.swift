@@ -1,4 +1,4 @@
-// main.swift
+// BenchmarkMain.swift
 // Entry point for the SwiftAnalytics benchmark runner.
 //
 // Usage:
@@ -7,6 +7,7 @@
 //
 // The JSON file can be compared against Benchmarks/Python/python_results.json
 // using the compare.py script.
+
 
 import Foundation
 
@@ -37,7 +38,7 @@ struct BenchmarkArgs {
     }
 }
 
-// MARK: – Main
+// MARK: – Main Entry Point
 
 @main
 struct BenchmarkEntryPoint {
@@ -79,7 +80,7 @@ struct BenchmarkEntryPoint {
             print("▶ Running \(suite.module) benchmarks …")
             let results = await suite.run()
 
-            // Apply optional name filter (live ✓ lines are printed by BenchmarkRunner)
+            // Apply optional name filter
             let filtered = args.filter.map { f in results.filter { $0.name.lowercased().contains(f.lowercased()) } } ?? results
             allResults.append(contentsOf: filtered)
             print("")
@@ -119,16 +120,15 @@ struct BenchmarkEntryPoint {
 
     private static func platformString() -> String {
         #if arch(arm64)
-        "Apple Silicon (arm64)"
+        return "Apple Silicon (arm64)"
         #elseif arch(x86_64)
-        "Intel (x86_64)"
+        return "Intel (x86_64)"
         #else
-        "unknown"
+        return "unknown"
         #endif
     }
 
     private static func swiftVersion() -> String {
-        // Injected by compiler at build time
         #if swift(>=6.0)
         return "Swift 6.x"
         #elseif swift(>=5.10)
