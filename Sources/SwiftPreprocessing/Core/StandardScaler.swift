@@ -1,7 +1,7 @@
 import Foundation
 
 /// Standardize features by removing the mean and scaling to unit variance.
-public final class StandardScaler: @unchecked Sendable {
+public final class StandardScaler: PreprocessingTransformer, @unchecked Sendable {
     public private(set) var mean: [Double]?
     public private(set) var std: [Double]?
     

@@ -124,6 +124,45 @@
                ReferencedContainer = "container:">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SwiftLLM"
+               BuildableName = "SwiftLLM"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SwiftExplain"
+               BuildableName = "SwiftExplain"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SwiftPrivacy"
+               BuildableName = "SwiftPrivacy"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -202,6 +241,33 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "SwiftForecastTests"
                BuildableName = "SwiftForecastTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SwiftPrivacyTests"
+               BuildableName = "SwiftPrivacyTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SwiftLLMTests"
+               BuildableName = "SwiftLLMTests"
+               ReferencedContainer = "container:">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "SwiftExplainTests"
+               BuildableName = "SwiftExplainTests"
                ReferencedContainer = "container:">
             </BuildableReference>
          </TestableReference>

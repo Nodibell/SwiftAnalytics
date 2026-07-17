@@ -6,6 +6,19 @@ import SwiftDataFrame
 @Suite("PCA Tests")
 struct PCATests {
     
+    init() {
+        if let url = Bundle.main.resourceURL?.appendingPathComponent("mlx-swift_Cmlx.bundle"),
+           let bundle = Bundle(url: url) {
+            _ = bundle.resourceURL
+        }
+        for bundle in Bundle.allBundles {
+            if let url = bundle.resourceURL?.appendingPathComponent("mlx-swift_Cmlx.bundle"),
+               let b = Bundle(url: url) {
+                _ = b.resourceURL
+            }
+        }
+    }
+    
     @Test("PCA basic fit and transform")
     func testPCABasic() async throws {
         // Synthetic 2D dataset where y is highly correlated with x

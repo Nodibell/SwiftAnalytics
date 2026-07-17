@@ -1,22 +1,34 @@
 import Foundation
+import Accelerate
 import MLX
+import SwiftPreprocessing
 
-/// K-Means Clustering algorithm using GPU-accelerated MLX operators.
+private struct SendablePointer<T>: @unchecked Sendable {
+    let pointer: UnsafeMutablePointer<T>
+}
+
+/// K-Means clustering with CPU (vDSP) and GPU (MLX) backends via hardware routing.
 public actor KMeans {
-    /// Number of clusters.
     public let nClusters: Int
-    
-    /// Maximum number of iterations.
     public let maxIterations: Int
-    
-    /// Convergence tolerance.
     public let tolerance: Float
-    
-    /// Centroids of clusters. Shape: [nClusters, nFeatures]
+    public let requestedDevice: ExecutionDevice
+
+    /// Device actually used for the last `fit` (after `.auto` resolution).
+    public private(set) var resolvedDevice: ExecutionDevice?
+
+    /// Centroids as an MLX array `[nClusters, nFeatures]` (populated by both backends).
     public private(set) var centroids: MLXArray?
-    
-    /// Initializes K-Means with parameters.
-    public init(nClusters: Int, maxIterations: Int = 300, tolerance: Double = 1e-4) throws {
+
+    /// CPU-side centroid matrix (source of truth after a CPU fit).
+    private var cpuCentroids: [[Double]]?
+
+    public init(
+        nClusters: Int,
+        maxIterations: Int = 300,
+        tolerance: Double = 1e-4,
+        device: ExecutionDevice = .auto
+    ) throws {
         guard nClusters > 0 else {
             throw ClusterError.invalidParameter("nClusters must be greater than 0.")
         }
@@ -26,146 +38,247 @@ public actor KMeans {
         self.nClusters = nClusters
         self.maxIterations = maxIterations
         self.tolerance = Float(tolerance)
+        self.requestedDevice = device
     }
-    
+
     /// Fits K-Means on the input dataset (Sendable interface).
-    public func fit(features: [[Double]]) throws {
+    public func fit(features: [[Double]]) async throws {
         guard !features.isEmpty else {
             throw ClusterError.emptyInput
         }
-        
+
         let numSamples = features.count
         let numFeatures = features[0].count
-        
-        let X = MLXArray(features.flatMap { $0.map { Float($0) } }).reshaped([numSamples, numFeatures])
-        try fit(X: X)
-    }
-    
-    /// Fits K-Means on the input dataset X.
-    /// - Parameter X: A 2D MLXArray of shape [samples, features].
-    public func fit(X: MLXArray) throws {
-        guard X.size > 0 else {
-            throw ClusterError.emptyInput
+        guard nClusters <= numSamples else {
+            throw ClusterError.invalidParameter(
+                "nClusters (\(nClusters)) cannot be greater than the number of samples (\(numSamples))."
+            )
         }
-        
+
+        let device = await HardwareRouter.shared.resolveDevice(
+            for: "KMeans",
+            sampleCount: numSamples,
+            featureCount: numFeatures,
+            requestedDevice: requestedDevice
+        )
+        resolvedDevice = device
+
+        switch device {
+        case .cpu:
+            try fitCPU(features: features)
+        case .gpu, .ane, .auto:
+            let X = MLXArray(features.flatMap { $0.map { Float($0) } })
+                .reshaped([numSamples, numFeatures])
+            let nClusts = self.nClusters
+            let maxIters = self.maxIterations
+            let tol = self.tolerance
+            let cents = Device.withDefaultDevice(.gpu) {
+                Self.runFitGPU(X: X, nClusters: nClusts, maxIterations: maxIters, tolerance: Float(tol))
+            }
+            self.centroids = cents
+            cpuCentroids = getCentroids()
+        }
+    }
+
+    /// Fits K-Means on an MLX tensor (forces GPU path after setting MLX device).
+    public func fit(X: MLXArray) async throws {
+        guard X.size > 0 else { throw ClusterError.emptyInput }
         let shape = X.shape
         guard shape.count == 2 else {
             throw ClusterError.dimensionMismatch(expected: 2, got: shape.count)
         }
-        
-        let numSamples = shape[0]
-        
-        guard nClusters <= numSamples else {
-            throw ClusterError.invalidParameter("nClusters (\(nClusters)) cannot be greater than the number of samples (\(numSamples)).")
+        guard nClusters <= shape[0] else {
+            throw ClusterError.invalidParameter(
+                "nClusters (\(nClusters)) cannot be greater than the number of samples (\(shape[0]))."
+            )
         }
-        
-        // 1. Initialize centroids (using the first nClusters samples)
-        var currentCentroids = X[0..<nClusters]
-        
-        for _ in 0..<maxIterations {
-            // 2. Compute pairwise distances: shape [samples, nClusters]
-            // X: [N, 1, M]
-            // Centroids: [1, K, M]
-            let diff = X.expandedDimensions(axes: [1]) - currentCentroids.expandedDimensions(axes: [0])
-            let dists = sqrt((diff * diff).sum(axis: -1))
-            
-            // 3. Assign labels (closest centroid): shape [samples]
-            let labels = argMin(dists, axis: -1)
-            
-            // 4. Compute new centroids
-            var updatedCentroids = [MLXArray]()
-            for k in 0..<nClusters {
-                let mask = equal(labels, MLXArray(k))
-                let count = mask.sum().item(Int.self)
-                
-                if count > 0 {
-                    // Sum features for samples belonging to cluster k
-                    let sumPoints = (X * mask.expandedDimensions(axes: [1])).sum(axis: 0)
-                    let newCentroid = sumPoints / Float(count)
-                    updatedCentroids.append(newCentroid)
-                } else {
-                    // Keep existing centroid if no points are assigned to it
-                    updatedCentroids.append(currentCentroids[k])
-                }
-            }
-            
-            let newCentroids = stacked(updatedCentroids)
-            
-            // 5. Check for convergence (distance between old and new centroids)
-            let diffCentroids = newCentroids - currentCentroids
-            let distChange = sqrt((diffCentroids * diffCentroids).sum()).item(Float.self)
-            
-            currentCentroids = newCentroids
-            
-            // Eagerly evaluate centroids to free memory and compile graph steps
-            eval(currentCentroids)
-            
-            if distChange < tolerance {
-                break
-            }
+
+        let device = await HardwareRouter.shared.resolveDevice(
+            for: "KMeans",
+            sampleCount: shape[0],
+            featureCount: shape[1],
+            requestedDevice: requestedDevice == .auto ? .gpu : requestedDevice
+        )
+        resolvedDevice = device == .cpu ? .gpu : device  // MLXArray input → GPU path
+        let nClusts = self.nClusters
+        let maxIters = self.maxIterations
+        let tol = self.tolerance
+        let cents = Device.withDefaultDevice(.gpu) {
+            Self.runFitGPU(X: X, nClusters: nClusts, maxIterations: maxIters, tolerance: Float(tol))
         }
-        
-        self.centroids = currentCentroids
+        self.centroids = cents
+        cpuCentroids = getCentroids()
     }
-    
-    /// Assigns each sample to the closest centroid (Sendable interface).
+
     public func predict(features: [[Double]]) throws -> [Int] {
-        guard !features.isEmpty else {
-            return []
+        guard !features.isEmpty else { return [] }
+        if let cpuCentroids, resolvedDevice == .cpu {
+            return predictCPU(features: features, centroids: cpuCentroids)
         }
-        
         let numSamples = features.count
         let numFeatures = features[0].count
-        
-        let X = MLXArray(features.flatMap { $0.map { Float($0) } }).reshaped([numSamples, numFeatures])
+        let X = MLXArray(features.flatMap { $0.map { Float($0) } })
+            .reshaped([numSamples, numFeatures])
         let labels = try predict(X: X)
-        
         return labels.asArray(Int32.self).map { Int($0) }
     }
-    
-    /// Assigns each sample in X to the closest centroid.
-    /// - Parameter X: A 2D MLXArray of shape [samples, features].
-    /// - Returns: An MLXArray of shape [samples] containing cluster indices.
+
     public func predict(X: MLXArray) throws -> MLXArray {
         guard let centroids = self.centroids else {
             throw ClusterError.fittingRequired
         }
-        guard X.size > 0 else {
-            throw ClusterError.emptyInput
-        }
-        
+        guard X.size > 0 else { throw ClusterError.emptyInput }
         let shape = X.shape
         guard shape.count == 2 else {
             throw ClusterError.dimensionMismatch(expected: 2, got: shape.count)
         }
-        
         let numFeatures = centroids.shape[1]
         guard shape[1] == numFeatures else {
             throw ClusterError.dimensionMismatch(expected: numFeatures, got: shape[1])
         }
-        
+
         let diff = X.expandedDimensions(axes: [1]) - centroids.expandedDimensions(axes: [0])
         let dists = sqrt((diff * diff).sum(axis: -1))
-        let labels = argMin(dists, axis: -1)
-        
-        return labels
+        return argMin(dists, axis: -1)
     }
-    
-    /// Returns the learned centroids as a standard Sendable 2D Double array.
+
     public func getCentroids() -> [[Double]]? {
+        if let cpuCentroids { return cpuCentroids }
         guard let centroids = centroids else { return nil }
         let flatArray = centroids.asArray(Float.self)
         let numClusters = centroids.shape[0]
         let numFeatures = centroids.shape[1]
-        
         var result = [[Double]]()
+        result.reserveCapacity(numClusters)
         for i in 0..<numClusters {
             var row = [Double]()
+            row.reserveCapacity(numFeatures)
             for j in 0..<numFeatures {
                 row.append(Double(flatArray[i * numFeatures + j]))
             }
             result.append(row)
         }
         return result
+    }
+
+    // MARK: – GPU (MLX)
+
+    private static func runFitGPU(X: MLXArray, nClusters: Int, maxIterations: Int, tolerance: Float) -> MLXArray {
+        var currentCentroids = X[0..<nClusters]
+
+        for _ in 0..<maxIterations {
+            let diff = X.expandedDimensions(axes: [1]) - currentCentroids.expandedDimensions(axes: [0])
+            let dists = sqrt((diff * diff).sum(axis: -1))
+            let labels = argMin(dists, axis: -1)
+
+            var updatedCentroids = [MLXArray]()
+            updatedCentroids.reserveCapacity(nClusters)
+            for k in 0..<nClusters {
+                let mask = equal(labels, MLXArray(k))
+                let count = mask.sum().item(Int.self)
+                if count > 0 {
+                    let sumPoints = (X * mask.expandedDimensions(axes: [1])).sum(axis: 0)
+                    updatedCentroids.append(sumPoints / Float(count))
+                } else {
+                    updatedCentroids.append(currentCentroids[k])
+                }
+            }
+
+            let newCentroids = stacked(updatedCentroids)
+            let diffCentroids = newCentroids - currentCentroids
+            let distChange = sqrt((diffCentroids * diffCentroids).sum()).item(Float.self)
+            currentCentroids = newCentroids
+            eval(currentCentroids)
+            if distChange < tolerance { break }
+        }
+
+        return currentCentroids
+    }
+
+    // MARK: – CPU (vDSP)
+
+    private func fitCPU(features: [[Double]]) throws {
+        let n = features.count
+        let m = features[0].count
+        var centroidsLocal = Array(features.prefix(nClusters))
+
+        var labels = [Int](repeating: 0, count: n)
+        let tol = Double(tolerance)
+
+        for _ in 0..<maxIterations {
+            // Assign labels (parallel over points)
+            let cents = centroidsLocal
+            labels.withUnsafeMutableBufferPointer { buf in
+                guard let base = buf.baseAddress else { return }
+                let sendableBase = SendablePointer(pointer: base)
+                DispatchQueue.concurrentPerform(iterations: n) { i in
+                    sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: cents)
+                }
+            }
+
+            // Update centroids
+            var sums = Array(repeating: [Double](repeating: 0, count: m), count: nClusters)
+            var counts = [Int](repeating: 0, count: nClusters)
+            for i in 0..<n {
+                let k = labels[i]
+                counts[k] += 1
+                let row = features[i]
+                for j in 0..<m {
+                    sums[k][j] += row[j]
+                }
+            }
+
+            var newCentroids = centroidsLocal
+            var maxShift = 0.0
+            for k in 0..<nClusters {
+                guard counts[k] > 0 else { continue }
+                var updated = [Double](repeating: 0, count: m)
+                let inv = 1.0 / Double(counts[k])
+                for j in 0..<m {
+                    updated[j] = sums[k][j] * inv
+                }
+                maxShift = max(maxShift, Self.distanceSquared(centroidsLocal[k], updated).squareRoot())
+                newCentroids[k] = updated
+            }
+
+            centroidsLocal = newCentroids
+            if maxShift < tol { break }
+        }
+
+        cpuCentroids = centroidsLocal
+        let flat = centroidsLocal.flatMap { $0.map { Float($0) } }
+        centroids = MLXArray(flat).reshaped([nClusters, m])
+    }
+
+    private func predictCPU(features: [[Double]], centroids: [[Double]]) -> [Int] {
+        var labels = [Int](repeating: 0, count: features.count)
+        labels.withUnsafeMutableBufferPointer { buf in
+            guard let base = buf.baseAddress else { return }
+            let sendableBase = SendablePointer(pointer: base)
+            DispatchQueue.concurrentPerform(iterations: features.count) { i in
+                sendableBase.pointer[i] = Self.nearestCentroid(point: features[i], centroids: centroids)
+            }
+        }
+        return labels
+    }
+
+    private static func nearestCentroid(point: [Double], centroids: [[Double]]) -> Int {
+        var best = 0
+        var bestDist = Double.greatestFiniteMagnitude
+        for (k, c) in centroids.enumerated() {
+            let d = distanceSquared(point, c)
+            if d < bestDist {
+                bestDist = d
+                best = k
+            }
+        }
+        return best
+    }
+
+    private static func distanceSquared(_ a: [Double], _ b: [Double]) -> Double {
+        precondition(a.count == b.count)
+        var dist = 0.0
+        vDSP_distancesqD(a, 1, b, 1, &dist, vDSP_Length(a.count))
+        return dist
     }
 }

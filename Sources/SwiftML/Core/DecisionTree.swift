@@ -1,9 +1,5 @@
 import Foundation
 
-// MARK: - Errors
-
-
-
 // MARK: - Split Criteria
 
 public enum SplitCriterion: Sendable {
@@ -22,33 +18,16 @@ struct SplitResult: Sendable {
     let rightIndices: [Int]
 }
 
-// MARK: - Decision Tree Node
+// MARK: - Flat Decision Tree Node (DOD Architecture)
 
-public final class DecisionTreeNode: Sendable {
-    public let featureIndex: Int?
-    public let threshold: Double?
-    public let left: DecisionTreeNode?
-    public let right: DecisionTreeNode?
+public struct FlatTreeNode: Sendable {
+    public let featureIndex: Int
+    public let threshold: Double
+    public let leftChild: Int
+    public let rightChild: Int
     /// Leaf value: predicted class (classifier) or mean (regressor)
-    public let value: Double?
-
-    public var isLeaf: Bool { left == nil && right == nil }
-
-    init(featureIndex: Int, threshold: Double, left: DecisionTreeNode, right: DecisionTreeNode) {
-        self.featureIndex = featureIndex
-        self.threshold = threshold
-        self.left = left
-        self.right = right
-        self.value = nil
-    }
-
-    init(value: Double) {
-        self.featureIndex = nil
-        self.threshold = nil
-        self.left = nil
-        self.right = nil
-        self.value = value
-    }
+    public let value: Double
+    public let isLeaf: Bool
 }
 
 // MARK: - Shared helpers
@@ -96,46 +75,119 @@ func bestSplit(
     }
 
     var best: SplitResult? = nil
+    let n = Double(indices.count)
 
-    let impurityFn: ([Double]) -> Double
-    switch criterion {
-    case .gini:    impurityFn = giniImpurity
-    case .entropy: impurityFn = entropy
-    case .mse:     impurityFn = mseImpurity
-    }
+    if criterion == .mse {
+        var totalSum = 0.0
+        for idx in indices { totalSum += y[idx] }
+        let baseTerm = (totalSum * totalSum) / n
 
-    let parentImpurity = impurityFn(indices.map { y[$0] })
+        for fi in featureRange {
+            let sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
 
-    for fi in featureRange {
-        // Collect unique sorted thresholds
-        let values = indices.map { X[$0][fi] }.sorted()
-        let thresholds = zip(values, values.dropFirst()).map { ($0 + $1) / 2 }
-        let uniqueThresholds = Array(Set(thresholds)).sorted()
+            var leftSum = 0.0
+            var leftCount = 0.0
 
-        for threshold in uniqueThresholds {
-            let left  = indices.filter { X[$0][fi] <= threshold }
-            let right = indices.filter { X[$0][fi] >  threshold }
-            guard !left.isEmpty, !right.isEmpty else { continue }
+            for i in 0..<(sortedIndices.count - 1) {
+                let idx = sortedIndices[i]
+                leftSum += y[idx]
+                leftCount += 1.0
 
-            let n = Double(indices.count)
-            let gain = parentImpurity
-                - Double(left.count)  / n * impurityFn(left.map  { y[$0] })
-                - Double(right.count) / n * impurityFn(right.map { y[$0] })
+                let nextIdx = sortedIndices[i + 1]
+                
+                if X[idx][fi] < X[nextIdx][fi] {
+                    let rightSum = totalSum - leftSum
+                    let rightCount = n - leftCount
 
-            if best == nil || gain > best!.gain {
-                best = SplitResult(
-                    featureIndex: fi,
-                    threshold: threshold,
-                    gain: gain,
-                    leftIndices: left,
-                    rightIndices: right
-                )
+                    let gain = ( (leftSum * leftSum / leftCount) + (rightSum * rightSum / rightCount) - baseTerm ) / n
+
+                    if best == nil || gain > best!.gain {
+                        let threshold = (X[idx][fi] + X[nextIdx][fi]) / 2.0
+                        best = SplitResult(
+                            featureIndex: fi,
+                            threshold: threshold,
+                            gain: gain,
+                            // Створення підмасивів відбувається ЛИШЕ коли знайдено кращий спліт
+                            leftIndices: Array(sortedIndices[0...i]),
+                            rightIndices: Array(sortedIndices[(i+1)...])
+                        )
+                    }
+                }
+            }
+        }
+    } else {
+        var totalCounts = [Double: Int]()
+        for idx in indices { totalCounts[y[idx], default: 0] += 1 }
+
+        let parentImpurity: Double
+        if criterion == .gini {
+            let sumSq = totalCounts.values.reduce(0.0) { $0 + Double($1 * $1) }
+            parentImpurity = 1.0 - (sumSq / (n * n))
+        } else {
+            parentImpurity = totalCounts.values.reduce(0.0) { acc, count in
+                let p = Double(count) / n
+                return acc - (p > 0 ? p * log2(p) : 0)
+            }
+        }
+
+        for fi in featureRange {
+            let sortedIndices = indices.sorted { X[$0][fi] < X[$1][fi] }
+
+            var leftCounts = [Double: Int]()
+            var rightCounts = totalCounts
+            var leftCount = 0.0
+
+            for i in 0..<(sortedIndices.count - 1) {
+                let idx = sortedIndices[i]
+                let target = y[idx]
+
+                // Оновлюємо частоти за O(1)
+                leftCounts[target, default: 0] += 1
+                rightCounts[target, default: 0] -= 1
+                leftCount += 1.0
+
+                let nextIdx = sortedIndices[i + 1]
+                if X[idx][fi] < X[nextIdx][fi] {
+                    let rightCount = n - leftCount
+                    let leftImpurity: Double
+                    let rightImpurity: Double
+
+                    if criterion == .gini {
+                        let leftSumSq = leftCounts.values.reduce(0.0) { $0 + Double($1 * $1) }
+                        leftImpurity = 1.0 - (leftSumSq / (leftCount * leftCount))
+
+                        let rightSumSq = rightCounts.values.reduce(0.0) { $0 + Double($1 * $1) }
+                        rightImpurity = 1.0 - (rightSumSq / (rightCount * rightCount))
+                    } else {
+                        leftImpurity = leftCounts.values.reduce(0.0) { acc, count in
+                            let p = Double(count) / leftCount
+                            return acc - (p > 0 ? p * log2(p) : 0)
+                        }
+                        rightImpurity = rightCounts.values.reduce(0.0) { acc, count in
+                            let p = Double(count) / rightCount
+                            return acc - (p > 0 ? p * log2(p) : 0)
+                        }
+                    }
+
+                    let gain = parentImpurity - (leftCount / n) * leftImpurity - (rightCount / n) * rightImpurity
+
+                    if best == nil || gain > best!.gain {
+                        let threshold = (X[idx][fi] + X[nextIdx][fi]) / 2.0
+                        best = SplitResult(
+                            featureIndex: fi,
+                            threshold: threshold,
+                            gain: gain,
+                            leftIndices: Array(sortedIndices[0...i]),
+                            rightIndices: Array(sortedIndices[(i+1)...])
+                        )
+                    }
+                }
             }
         }
     }
+
     return best
 }
-
 // MARK: - Decision Tree Classifier
 
 /// A pure Swift Decision Tree Classifier using Gini or Entropy splitting.
@@ -144,7 +196,7 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
     public let minSamplesSplit: Int
     public let criterion: SplitCriterion
 
-    private var root: DecisionTreeNode?
+    private var nodes: [FlatTreeNode] = []
 
     public init(maxDepth: Int = 5, minSamplesSplit: Int = 2, criterion: SplitCriterion = .gini) {
         self.maxDepth = maxDepth
@@ -157,40 +209,68 @@ public actor DecisionTreeClassifier: ClassifierEstimator {
         guard features.count == targets.count else {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
-        root = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0)
+        nodes = []
+        _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0, nodes: &nodes)
     }
 
     public func predict(features: [[Double]]) throws -> [Int] {
-        guard let root = root else { throw MLError.notFitted }
-        return features.map { predictSample($0, node: root) }
+        guard !nodes.isEmpty else { throw MLError.notFitted }
+        return features.map { predictSample($0, nodes: nodes) }
+    }
+    
+    public func getTreeNodes() -> [FlatTreeNode] {
+        return nodes
     }
 
-    private func buildTree(X: [[Double]], y: [Double], indices: [Int], depth: Int) -> DecisionTreeNode {
+    private func buildTree(X: [[Double]], y: [Double], indices: [Int], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
         let labels = indices.map { y[$0] }
+        let majority = labels.mostFrequent()
 
         // Leaf: max depth, too few samples, or pure node
         if depth >= maxDepth || indices.count < minSamplesSplit || Set(labels).count == 1 {
-            let majority = labels.mostFrequent()
-            return DecisionTreeNode(value: majority)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true)
+            nodes.append(leaf)
+            return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: criterion, maxFeatures: nil) else {
-            return DecisionTreeNode(value: labels.mostFrequent())
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true)
+            nodes.append(leaf)
+            return nodes.count - 1
         }
 
-        let left  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1)
-        let right = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1)
-        return DecisionTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, left: left, right: right)
+        let currentIndex = nodes.count
+        // Placeholder to maintain index stability during recursion
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
+
+        let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, nodes: &nodes)
+        let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1, nodes: &nodes)
+        
+        nodes[currentIndex] = FlatTreeNode(
+            featureIndex: split.featureIndex,
+            threshold: split.threshold,
+            leftChild: leftIndex,
+            rightChild: rightIndex,
+            value: majority,
+            isLeaf: false
+        )
+
+        return currentIndex
     }
 
-    private func predictSample(_ x: [Double], node: DecisionTreeNode) -> Int {
-        if node.isLeaf { return Int(node.value ?? 0) }
-        let fi = node.featureIndex!
-        if x[fi] <= node.threshold! {
-            return predictSample(x, node: node.left!)
-        } else {
-            return predictSample(x, node: node.right!)
+    private func predictSample(_ x: [Double], nodes: [FlatTreeNode]) -> Int {
+        guard !nodes.isEmpty else { return 0 }
+        var curr = 0
+        
+        while !nodes[curr].isLeaf {
+            let node = nodes[curr]
+            if x[node.featureIndex] <= node.threshold {
+                curr = node.leftChild
+            } else {
+                curr = node.rightChild
+            }
         }
+        return Int(nodes[curr].value)
     }
 }
 
@@ -201,7 +281,7 @@ public actor DecisionTreeRegressor: RegressorEstimator {
     public let maxDepth: Int
     public let minSamplesSplit: Int
 
-    private var root: DecisionTreeNode?
+    private var nodes: [FlatTreeNode] = []
 
     public init(maxDepth: Int = 5, minSamplesSplit: Int = 2) {
         self.maxDepth = maxDepth
@@ -213,43 +293,68 @@ public actor DecisionTreeRegressor: RegressorEstimator {
         guard features.count == targets.count else {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
         }
-        root = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0)
+        
+        nodes = []
+        _ = buildTree(X: features, y: targets, indices: Array(0..<features.count), depth: 0, nodes: &nodes)
     }
 
     public func predict(features: [[Double]]) throws -> [Double] {
-        guard let root = root else { throw MLError.notFitted }
-        return features.map { predictSample($0, node: root) }
+        guard !nodes.isEmpty else { throw MLError.notFitted }
+        return features.map { predictSample($0, nodes: nodes) }
     }
 
-    public func getRoot() -> DecisionTreeNode? {
-        return root
+    public func getTreeNodes() -> [FlatTreeNode] {
+        return nodes
     }
 
-    private func buildTree(X: [[Double]], y: [Double], indices: [Int], depth: Int) -> DecisionTreeNode {
+    private func buildTree(X: [[Double]], y: [Double], indices: [Int], depth: Int, nodes: inout [FlatTreeNode]) -> Int {
         let values = indices.map { y[$0] }
-        let mean = values.reduce(0, +) / Double(values.count)
+        let mean = values.mean()
 
         if depth >= maxDepth || indices.count < minSamplesSplit {
-            return DecisionTreeNode(value: mean)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true)
+            nodes.append(leaf)
+            return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: nil) else {
-            return DecisionTreeNode(value: mean)
+            let leaf = FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true)
+            nodes.append(leaf)
+            return nodes.count - 1
         }
 
-        let left  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1)
-        let right = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1)
-        return DecisionTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, left: left, right: right)
+        let currentIndex = nodes.count
+        // Placeholder
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
+
+        let leftIndex  = buildTree(X: X, y: y, indices: split.leftIndices,  depth: depth + 1, nodes: &nodes)
+        let rightIndex = buildTree(X: X, y: y, indices: split.rightIndices, depth: depth + 1, nodes: &nodes)
+        
+        nodes[currentIndex] = FlatTreeNode(
+            featureIndex: split.featureIndex,
+            threshold: split.threshold,
+            leftChild: leftIndex,
+            rightChild: rightIndex,
+            value: mean,
+            isLeaf: false
+        )
+
+        return currentIndex
     }
 
-    private func predictSample(_ x: [Double], node: DecisionTreeNode) -> Double {
-        if node.isLeaf { return node.value ?? 0 }
-        let fi = node.featureIndex!
-        if x[fi] <= node.threshold! {
-            return predictSample(x, node: node.left!)
-        } else {
-            return predictSample(x, node: node.right!)
+    private func predictSample(_ x: [Double], nodes: [FlatTreeNode]) -> Double {
+        guard !nodes.isEmpty else { return 0 }
+        var curr = 0
+        
+        while !nodes[curr].isLeaf {
+            let node = nodes[curr]
+            if x[node.featureIndex] <= node.threshold {
+                curr = node.leftChild
+            } else {
+                curr = node.rightChild
+            }
         }
+        return nodes[curr].value
     }
 }
 

@@ -1,3 +1,5 @@
+import SwiftDataFrame
+
 /// SwiftStats — statistical analysis module backed by Accelerate vDSP + LAPACK.
 ///
 /// All functions are grouped as static methods on the `Stats` enum namespace.

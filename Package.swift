@@ -26,6 +26,9 @@ let package = Package(
         .library(name: "SwiftNLP",           targets: ["SwiftNLP"]),
         .library(name: "SwiftOptimize",      targets: ["SwiftOptimize"]),
         .library(name: "SwiftForecast",      targets: ["SwiftForecast"]),
+        .library(name: "SwiftLLM",           targets: ["SwiftLLM"]),
+        .library(name: "SwiftExplain",       targets: ["SwiftExplain"]),
+        .library(name: "SwiftPrivacy",       targets: ["SwiftPrivacy"]),
     ],
     dependencies: [
         .package(
@@ -111,6 +114,7 @@ let package = Package(
             name: "SwiftCluster",
             dependencies: [
                 "SwiftDataFrame",
+                "SwiftPreprocessing",
                 .product(name: "MLX", package: "mlx-swift"),
             ],
             path: "Sources/SwiftCluster",
@@ -119,11 +123,14 @@ let package = Package(
                 .unsafeFlags(["-Xcc", "-DACCELERATE_NEW_LAPACK"]),
                 .enableUpcomingFeature("StrictConcurrency"),
                 .enableUpcomingFeature("ExistentialAny")
+            ],
+            linkerSettings: [
+                .linkedFramework("Accelerate"),
             ]
         ),
         .testTarget(
             name: "SwiftClusterTests",
-            dependencies: ["SwiftCluster"],
+            dependencies: ["SwiftCluster", "SwiftPreprocessing"],
             path: "Tests/SwiftClusterTests",
             swiftSettings: globalSwiftSettings
         ),
@@ -181,6 +188,60 @@ let package = Package(
             swiftSettings: globalSwiftSettings
         ),
 
+        // ── SwiftLLM ─────────────────────────────────────────────────────
+        .target(
+            name: "SwiftLLM",
+            dependencies: [
+                "SwiftNLP",
+                .product(name: "MLX", package: "mlx-swift"),
+                .product(name: "MLXNN", package: "mlx-swift"),
+            ],
+            path: "Sources/SwiftLLM",
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftLLMTests",
+            dependencies: ["SwiftLLM"],
+            path: "Tests/SwiftLLMTests",
+            swiftSettings: globalSwiftSettings
+        ),
+
+        // ── SwiftExplain ─────────────────────────────────────────────────
+        .target(
+            name: "SwiftExplain",
+            dependencies: [
+                "SwiftML",
+                "SwiftStats",
+                "SwiftDataFrame",
+                "SwiftPreprocessing",
+            ],
+            path: "Sources/SwiftExplain",
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftExplainTests",
+            dependencies: ["SwiftExplain"],
+            path: "Tests/SwiftExplainTests",
+            swiftSettings: globalSwiftSettings
+        ),
+
+        // ── SwiftPrivacy ─────────────────────────────────────────────────
+        .target(
+            name: "SwiftPrivacy",
+            dependencies: [
+                "SwiftDataFrame",
+                "SwiftStats",
+            ],
+            path: "Sources/SwiftPrivacy",
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftPrivacyTests",
+            dependencies: ["SwiftPrivacy"],
+            path: "Tests/SwiftPrivacyTests",
+            swiftSettings: globalSwiftSettings
+        ),
+
         // ── SwiftAnalyticsBenchmarks ──────────────────────────────────────
         .executableTarget(
             name: "SwiftAnalyticsBenchmarks",
@@ -193,6 +254,9 @@ let package = Package(
                 "SwiftNLP",
                 "SwiftOptimize",
                 "SwiftForecast",
+                "SwiftLLM",
+                "SwiftExplain",
+                "SwiftPrivacy",
             ],
             path: "Benchmarks/Swift",
             swiftSettings: globalSwiftSettings

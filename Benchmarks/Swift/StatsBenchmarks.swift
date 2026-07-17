@@ -24,7 +24,7 @@ struct StatsBenchmarks: BenchmarkSuite {
             name: "Mean (vDSP, 1M elements)",
             module: module
         ) {
-            _ = try Stats.mean(data)
+            _ = try Stats.mean(data, checkNaN: false)
         }
         results.append(meanResult)
 
@@ -33,7 +33,7 @@ struct StatsBenchmarks: BenchmarkSuite {
             name: "StdDev (vDSP, 1M elements)",
             module: module
         ) {
-            _ = try Stats.standardDeviation(data)
+            _ = try Stats.standardDeviation(data, checkNaN: false)
         }
         results.append(stdResult)
 
@@ -42,7 +42,7 @@ struct StatsBenchmarks: BenchmarkSuite {
             name: "Variance (vDSP, 1M elements)",
             module: module
         ) {
-            _ = try Stats.variance(data)
+            _ = try Stats.variance(data, checkNaN: false)
         }
         results.append(varResult)
 

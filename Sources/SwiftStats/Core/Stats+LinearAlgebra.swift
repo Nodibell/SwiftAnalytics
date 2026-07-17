@@ -1,4 +1,5 @@
 import Accelerate
+import SwiftDataFrame
 
 // MARK: – Linear Algebra (vDSP + LAPACK)
 

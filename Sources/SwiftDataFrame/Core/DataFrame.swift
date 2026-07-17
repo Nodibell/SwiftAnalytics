@@ -335,6 +335,10 @@ public struct DataFrame: Sendable {
         return rows(at: indices)
     }
 
+    public func gathered(at indices: [Int]) -> DataFrame {
+        return rows(at: indices)
+    }
+
     private func rows(at indices: [Int]) -> DataFrame {
         guard !indices.isEmpty else { return DataFrame.empty }
         let newCols: [any AnyColumn] = columns.map { $0.gathered(at: indices) }

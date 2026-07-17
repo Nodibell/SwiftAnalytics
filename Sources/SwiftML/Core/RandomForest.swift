@@ -28,7 +28,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
     public let minSamplesSplit: Int
     public let criterion: SplitCriterion
 
-    private var trees: [DecisionTreeNode] = []
+    // DOD Архітектура: Ліс — це масив масивів плоских вузлів
+    private var trees: [[FlatTreeNode]] = []
     private var numClasses: Int = 0
 
     public init(
@@ -58,24 +59,27 @@ public actor RandomForestClassifier: ClassifierEstimator {
         let minSamplesSplit = self.minSamplesSplit
         let criterion = self.criterion
 
-        let trainedTrees: [DecisionTreeNode] = try await withThrowingTaskGroup(of: DecisionTreeNode.self) { group in
+        let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
             for i in 0..<nEstimators {
                 group.addTask {
                     let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
-                    return RandomForestClassifier.buildTreeSync(
+                    var nodes = [FlatTreeNode]()
+                    _ = RandomForestClassifier.buildTreeSync(
                         X: bX, y: bY,
                         indices: Array(0..<bX.count),
                         depth: 0,
                         maxDepth: maxDepth,
                         minSamplesSplit: minSamplesSplit,
                         criterion: criterion,
-                        maxFeatures: maxFeatures
+                        maxFeatures: maxFeatures,
+                        nodes: &nodes
                     )
+                    return nodes
                 }
             }
-            var result = [DecisionTreeNode]()
-            for try await tree in group {
-                result.append(tree)
+            var result = [[FlatTreeNode]]()
+            for try await treeNodes in group {
+                result.append(treeNodes)
             }
             return result
         }
@@ -87,9 +91,9 @@ public actor RandomForestClassifier: ClassifierEstimator {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
             var votes = [Int: Int]()
-            for tree in trees {
-                let pred = RandomForestClassifier.predictSample(sample, node: tree)
-                votes[Int(pred), default: 0] += 1
+            for treeNodes in trees {
+                let pred = Int(RandomForestClassifier.predictSample(sample, nodes: treeNodes))
+                votes[pred, default: 0] += 1
             }
             return votes.max(by: { $0.value < $1.value })?.key ?? 0
         }
@@ -99,8 +103,8 @@ public actor RandomForestClassifier: ClassifierEstimator {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
             var votes = [Double](repeating: 0, count: numClasses)
-            for tree in trees {
-                let pred = Int(RandomForestClassifier.predictSample(sample, node: tree))
+            for treeNodes in trees {
+                let pred = Int(RandomForestClassifier.predictSample(sample, nodes: treeNodes))
                 if pred < votes.count {
                     votes[pred] += 1.0
                 }
@@ -120,35 +124,48 @@ public actor RandomForestClassifier: ClassifierEstimator {
         maxDepth: Int,
         minSamplesSplit: Int,
         criterion: SplitCriterion,
-        maxFeatures: Int?
-    ) -> DecisionTreeNode {
+        maxFeatures: Int?,
+        nodes: inout [FlatTreeNode]
+    ) -> Int {
         let labels = indices.map { y[$0] }
+        let majority = labels.mostFrequent()
 
         if depth >= maxDepth || indices.count < minSamplesSplit || Set(labels).count == 1 {
-            return DecisionTreeNode(value: labels.mostFrequent())
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true))
+            return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: criterion, maxFeatures: maxFeatures) else {
-            return DecisionTreeNode(value: labels.mostFrequent())
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: majority, isLeaf: true))
+            return nodes.count - 1
         }
+
+        let currentIndex = nodes.count
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
 
         let left = buildTreeSync(X: X, y: y, indices: split.leftIndices, depth: depth + 1,
                                   maxDepth: maxDepth, minSamplesSplit: minSamplesSplit,
-                                  criterion: criterion, maxFeatures: maxFeatures)
+                                  criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
         let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1,
                                    maxDepth: maxDepth, minSamplesSplit: minSamplesSplit,
-                                   criterion: criterion, maxFeatures: maxFeatures)
-        return DecisionTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, left: left, right: right)
+                                   criterion: criterion, maxFeatures: maxFeatures, nodes: &nodes)
+                                   
+        nodes[currentIndex] = FlatTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, leftChild: left, rightChild: right, value: majority, isLeaf: false)
+        return currentIndex
     }
 
-    private static func predictSample(_ x: [Double], node: DecisionTreeNode) -> Double {
-        if node.isLeaf { return node.value ?? 0 }
-        let fi = node.featureIndex!
-        if x[fi] <= node.threshold! {
-            return predictSample(x, node: node.left!)
-        } else {
-            return predictSample(x, node: node.right!)
+    private static func predictSample(_ x: [Double], nodes: [FlatTreeNode]) -> Double {
+        guard !nodes.isEmpty else { return 0 }
+        var curr = 0
+        while !nodes[curr].isLeaf {
+            let node = nodes[curr]
+            if x[node.featureIndex] <= node.threshold {
+                curr = node.leftChild
+            } else {
+                curr = node.rightChild
+            }
         }
+        return nodes[curr].value
     }
 }
 
@@ -162,7 +179,7 @@ public actor RandomForestRegressor: RegressorEstimator {
     public let maxFeatures: Int?
     public let minSamplesSplit: Int
 
-    private var trees: [DecisionTreeNode] = []
+    private var trees: [[FlatTreeNode]] = []
 
     public init(
         nEstimators: Int = 100,
@@ -187,23 +204,26 @@ public actor RandomForestRegressor: RegressorEstimator {
         let maxFeatures = self.maxFeatures
         let minSamplesSplit = self.minSamplesSplit
 
-        let trainedTrees: [DecisionTreeNode] = try await withThrowingTaskGroup(of: DecisionTreeNode.self) { group in
+        let trainedTrees: [[FlatTreeNode]] = try await withThrowingTaskGroup(of: [FlatTreeNode].self) { group in
             for i in 0..<nEstimators {
                 group.addTask {
                     let (bX, bY) = bootstrapSample(features: features, targets: targets, seed: i)
-                    return RandomForestRegressor.buildTreeSync(
+                    var nodes = [FlatTreeNode]()
+                    _ = RandomForestRegressor.buildTreeSync(
                         X: bX, y: bY,
                         indices: Array(0..<bX.count),
                         depth: 0,
                         maxDepth: maxDepth,
                         minSamplesSplit: minSamplesSplit,
-                        maxFeatures: maxFeatures
+                        maxFeatures: maxFeatures,
+                        nodes: &nodes
                     )
+                    return nodes
                 }
             }
-            var result = [DecisionTreeNode]()
-            for try await tree in group {
-                result.append(tree)
+            var result = [[FlatTreeNode]]()
+            for try await treeNodes in group {
+                result.append(treeNodes)
             }
             return result
         }
@@ -214,7 +234,7 @@ public actor RandomForestRegressor: RegressorEstimator {
     public func predict(features: [[Double]]) throws -> [Double] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
-            let preds = trees.map { RandomForestRegressor.predictSample(sample, node: $0) }
+            let preds = trees.map { RandomForestRegressor.predictSample(sample, nodes: $0) }
             return preds.mean()
         }
     }
@@ -226,34 +246,46 @@ public actor RandomForestRegressor: RegressorEstimator {
         depth: Int,
         maxDepth: Int,
         minSamplesSplit: Int,
-        maxFeatures: Int?
-    ) -> DecisionTreeNode {
+        maxFeatures: Int?,
+        nodes: inout [FlatTreeNode]
+    ) -> Int {
         let values = indices.map { y[$0] }
         let mean = values.mean()
 
         if depth >= maxDepth || indices.count < minSamplesSplit {
-            return DecisionTreeNode(value: mean)
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true))
+            return nodes.count - 1
         }
 
         guard let split = bestSplit(X: X, y: y, indices: indices, criterion: .mse, maxFeatures: maxFeatures),
               split.gain > 0 else {
-            return DecisionTreeNode(value: mean)
+            nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: mean, isLeaf: true))
+            return nodes.count - 1
         }
+
+        let currentIndex = nodes.count
+        nodes.append(FlatTreeNode(featureIndex: -1, threshold: 0, leftChild: -1, rightChild: -1, value: 0, isLeaf: false))
 
         let left = buildTreeSync(X: X, y: y, indices: split.leftIndices, depth: depth + 1,
-                                  maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures)
+                                  maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
         let right = buildTreeSync(X: X, y: y, indices: split.rightIndices, depth: depth + 1,
-                                   maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures)
-        return DecisionTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, left: left, right: right)
+                                   maxDepth: maxDepth, minSamplesSplit: minSamplesSplit, maxFeatures: maxFeatures, nodes: &nodes)
+                                   
+        nodes[currentIndex] = FlatTreeNode(featureIndex: split.featureIndex, threshold: split.threshold, leftChild: left, rightChild: right, value: mean, isLeaf: false)
+        return currentIndex
     }
 
-    private static func predictSample(_ x: [Double], node: DecisionTreeNode) -> Double {
-        if node.isLeaf { return node.value ?? 0 }
-        let fi = node.featureIndex!
-        if x[fi] <= node.threshold! {
-            return predictSample(x, node: node.left!)
-        } else {
-            return predictSample(x, node: node.right!)
+    private static func predictSample(_ x: [Double], nodes: [FlatTreeNode]) -> Double {
+        guard !nodes.isEmpty else { return 0 }
+        var curr = 0
+        while !nodes[curr].isLeaf {
+            let node = nodes[curr]
+            if x[node.featureIndex] <= node.threshold {
+                curr = node.leftChild
+            } else {
+                curr = node.rightChild
+            }
         }
+        return nodes[curr].value
     }
 }

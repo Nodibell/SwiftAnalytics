@@ -41,4 +41,16 @@ extension DataFrame {
         try await pca.fit(features)
         return pca
     }
+    
+    /// Fits a DBSCAN clusterer on the specified columns.
+    public func fitDBSCAN(
+        columns names: [String],
+        eps: Double = 0.5,
+        minSamples: Int = 5
+    ) async throws -> DBSCAN {
+        let features = try extractFeatures(columns: names)
+        let dbscan = DBSCAN(eps: eps, minSamples: minSamples)
+        try await dbscan.fit(features: features)
+        return dbscan
+    }
 }

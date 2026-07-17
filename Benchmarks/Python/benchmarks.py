@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SwiftAnalytics Python Benchmark Suite — v0.7
+SwiftAnalytics Python Benchmark Suite — v1.0
 Mirrors the Swift benchmarks in Benchmarks/Swift/ for direct comparison.
 
 Usage:
@@ -28,6 +28,9 @@ from sklearn.cluster import KMeans
 from statsmodels.tsa.holtwinters import ExponentialSmoothing
 from statsmodels.tsa.arima.model import ARIMA
 from statsmodels.tsa.seasonal import seasonal_decompose
+import torch
+import torch.nn as nn
+import shap
 
 
 # ── Measurement harness ────────────────────────────────────────────────────────
@@ -211,13 +214,13 @@ def bench_forecast():
     print("▶ Running SwiftForecast (Statsmodels) benchmarks …")
     np.random.seed(42)
 
-    # Seasonal series
-    t = np.arange(1_000)
-    hw_series = 20.0 + 0.3 * t + 5.0 * np.sin(2 * np.pi * t / 12) + np.random.uniform(-0.5, 0.5, 1_000)
+    # Seasonal series (50k points)
+    t = np.arange(50_000)
+    hw_series = 20.0 + 0.3 * t + 5.0 * np.sin(2 * np.pi * t / 12) + np.random.uniform(-0.5, 0.5, 50_000)
 
-    # Random walk
-    steps = np.random.uniform(-1, 1, 500)
-    arima_series = np.cumsum(np.insert(steps, 0, 0.0))[:500]
+    # Random walk (50k points)
+    steps = np.random.uniform(-1, 1, 50_000)
+    arima_series = np.cumsum(np.insert(steps, 0, 0.0))[:50_000]
 
     # Constant-velocity 1D Kalman (matches SwiftForecast.KalmanFilter.oneDimensional)
     obs = np.random.uniform(24.0, 26.0, 10_000)
@@ -246,38 +249,179 @@ def bench_forecast():
 
     results = []
     results.append(run_benchmark(
-        "Holt-Winters fit (1k pts, period=12)", "Statsmodels",
-        lambda: ExponentialSmoothing(hw_series, trend="add", seasonal="add", seasonal_periods=12).fit(optimized=True),
+        "Holt-Winters fit (50k pts, period=12)", "Statsmodels",
+        lambda: ExponentialSmoothing(hw_series, trend="add", seasonal="add", seasonal_periods=12)
+                .fit(smoothing_level=0.1, smoothing_trend=0.1, smoothing_seasonal=0.1, optimized=False),
         warmup=1, iterations=5
     ))
+
     results.append(run_benchmark(
-        "ARIMA(1,1,1) fit (500 pts)", "Statsmodels",
-        lambda: ARIMA(arima_series, order=(1, 1, 1)).fit(),
+        "ARIMA(1,1,1) fit (50k pts)", "Statsmodels",
+        lambda: ARIMA(arima_series, order=(1, 1, 1)).fit(method='hannan_rissanen'),
         warmup=1, iterations=5
     ))
 
     def arima_fit_and_forecast():
-        m = ARIMA(arima_series, order=(1, 1, 1)).fit()
+        m = ARIMA(arima_series, order=(1, 1, 1)).fit(method='hannan_rissanen')
         m.forecast(steps=24)
 
     results.append(run_benchmark(
-        "ARIMA(1,1,1) forecast horizon=24", "Statsmodels",
+        "ARIMA(1,1,1) forecast horizon=24 (50k pts)", "Statsmodels",
         arima_fit_and_forecast,
         warmup=1, iterations=5
     ))
+
     results.append(run_benchmark(
         "Kalman Filter 1D (10k obs)", "NumPy",
         lambda: kalman_1d_filter(obs),
         warmup=1, iterations=5
     ))
+    
+    # Використовуємо зріз [:1000] для точної відповідності Swift-версії (1k pts)
     results.append(run_benchmark(
         "TS Decomposition additive (1k pts)", "Statsmodels",
-        lambda: seasonal_decompose(hw_series, model="additive", period=12),
+        lambda: seasonal_decompose(hw_series[:1000], model="additive", period=12),
         warmup=1, iterations=7
     ))
     print()
     return results
 
+
+def bench_advanced():
+    print("▶ Running SwiftLLM/SwiftExplain/SwiftPrivacy (Python) benchmarks …")
+    
+    # ── 1. LLM Benchmark (PyTorch) ──
+    vocab_size = 1000
+    dimensions = 64
+    num_heads = 4
+    max_seq_len = 128
+    
+    class PyTorchDecoder(nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.tok_emb = nn.Embedding(vocab_size, dimensions)
+            self.pos_emb = nn.Embedding(max_seq_len, dimensions)
+            # 1-layer decoder causal transformer
+            layer = nn.TransformerDecoderLayer(
+                d_model=dimensions,
+                nhead=num_heads,
+                dim_feedforward=dimensions * 4,
+                dropout=0.0,
+                batch_first=True,
+                norm_first=True
+            )
+            self.decoder = nn.TransformerDecoder(layer, num_layers=1)
+            self.output_projection = nn.Linear(dimensions, vocab_size)
+            
+        def forward(self, x):
+            seq_len = x.size(1)
+            pos = torch.arange(0, seq_len, device=x.device).unsqueeze(0)
+            h = self.tok_emb(x) + self.pos_emb(pos)
+            
+            mask = nn.Transformer.generate_square_subsequent_mask(seq_len, device=x.device)
+            # PyTorch's TransformerDecoder requires tgt and memory. We causal-mask both.
+            out = self.decoder(h, memory=h, tgt_mask=mask, memory_mask=mask)
+            return self.output_projection(out)
+
+    device = torch.device("cpu")
+    model = PyTorchDecoder().to(device)
+    model.eval()
+
+    # Forward Pass (seq_len = 64)
+    input_data = torch.arange(0, 64, device=device).unsqueeze(0) % vocab_size
+    
+    def forward_fn():
+        with torch.no_grad():
+            out = model(input_data)
+            _ = out.sum().item()
+
+    # Token Generation (10 tokens)
+    def generate_fn():
+        tokens = [1, 2]
+        with torch.no_grad():
+            for _ in range(10):
+                x = torch.tensor([tokens], device=device)
+                logits = model(x)
+                next_tok = torch.argmax(logits[0, -1]).item()
+                tokens.append(next_tok)
+
+    # ── 2. KernelSHAP Benchmark (shap library) ──
+    M = 5
+    num_background = 20
+    num_coalitions = 100
+    
+    np.random.seed(42)
+    background = np.random.uniform(-2.0, 2.0, size=(num_background, M))
+    instance = np.random.uniform(-2.0, 2.0, size=(1, M))
+    
+    # Model function: sum of features
+    def model_fn(x):
+        return np.sum(x, axis=1)
+        
+    explainer = shap.KernelExplainer(model_fn, background)
+    
+    def explain_fn():
+        _ = explainer.shap_values(instance, nsamples=num_coalitions, l1_reg=False)
+
+    # ── 3. RingLWE & PNNS Benchmark (NumPy) ──
+    q = 1048583
+    t = 1000
+    d = 8
+    delta = q // t
+    
+    s_key = np.random.randint(0, t, size=d)
+    
+    # Ring-LWE Encrypt/Decrypt (vector size 64)
+    plain_vector = np.random.randint(0, 10, size=64)
+    
+    def encrypt_vector(v):
+        encrypted = []
+        for val in v:
+            a = np.random.randint(0, q, size=d)
+            e = np.random.randint(-3, 4)
+            b = (np.dot(a, s_key) + e + val * delta) % q
+            encrypted.append((a, b))
+        return encrypted
+        
+    def decrypt_vector(encrypted):
+        decrypted = []
+        for a, b in encrypted:
+            diff = (b - np.dot(a, s_key)) % q
+            m = int(round(diff / delta)) % t
+            decrypted.append(m)
+        return decrypted
+        
+    def crypt_fn():
+        enc = encrypt_vector(plain_vector)
+        _ = decrypt_vector(enc)
+        
+    # PNNS Classify (50 DB vectors, size 64)
+    db = np.random.randint(0, 10, size=(50, 64))
+    
+    def pnns_fn():
+        enc_query = encrypt_vector(plain_vector)
+        results_dots = []
+        for row in db:
+            sum_a = np.zeros(d, dtype=int)
+            sum_b = 0
+            for j in range(64):
+                a_j, b_j = enc_query[j]
+                x_j = row[j]
+                sum_a = (sum_a + a_j * x_j) % q
+                sum_b = (sum_b + b_j * x_j) % q
+            results_dots.append((sum_a, sum_b))
+            
+        dots = decrypt_vector(results_dots)
+        _ = np.argmax(dots)
+
+    results = []
+    results.append(run_benchmark("LLM Forward Pass (seqLen=64)", "PyTorch", forward_fn, warmup=2, iterations=5))
+    results.append(run_benchmark("LLM Generate (10 tokens)", "PyTorch", generate_fn, warmup=1, iterations=3))
+    results.append(run_benchmark("KernelSHAP Explain (5 feats, 100 coalitions)", "SHAP", explain_fn, warmup=2, iterations=5))
+    results.append(run_benchmark("RingLWE Encrypt/Decrypt (vector size=64)", "Python LWE", crypt_fn, warmup=2, iterations=5))
+    results.append(run_benchmark("PNNS Classify (50 DB vectors, size=64)", "Python LWE", pnns_fn, warmup=2, iterations=5))
+    
+    return results
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
@@ -286,13 +430,14 @@ def main():
     parser.add_argument("--json", metavar="PATH", help="Export results to JSON file")
     args = parser.parse_args()
 
-    print("╔══════════════════════════════════════════════════════════════╗")
-    print("║      SwiftAnalytics Python Benchmark Suite — v0.7           ║")
-    print("╚══════════════════════════════════════════════════════════════╝")
+    print("╔══════════════════════════════════════════════════════════╗")
+    print("║      SwiftAnalytics Python Benchmark Suite — v1.0        ║")
+    print("╚══════════════════════════════════════════════════════════╝")
     print(f"Platform : {platform.machine()} ({platform.system()})")
     print(f"Python   : {sys.version.split()[0]}")
     print(f"NumPy    : {np.__version__}")
     print(f"Pandas   : {pd.__version__}")
+    print(f"PyTorch  : {torch.__version__}")
     print("")
 
     all_results = []
@@ -300,6 +445,7 @@ def main():
     all_results.extend(bench_dataframe())
     all_results.extend(bench_ml())
     all_results.extend(bench_forecast())
+    all_results.extend(bench_advanced())
 
     # Console summary table
     print(f"\n{'Benchmark':<52}  {'Module':<14}  {'Mean(ms)':>10}  {'Median(ms)':>10}")
@@ -318,6 +464,8 @@ def main():
         with open(args.json, "w") as f:
             json.dump(report, f, indent=2)
         print(f"\n✅ Results exported to: {args.json}\n")
+
+
 
 
 if __name__ == "__main__":

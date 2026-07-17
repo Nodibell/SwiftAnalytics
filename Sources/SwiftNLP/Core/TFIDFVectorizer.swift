@@ -1,4 +1,5 @@
 import Foundation
+import SwiftDataFrame
 
 /// TF-IDF Vectorizer for text feature extraction.
 public actor TFIDFVectorizer {

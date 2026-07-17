@@ -1,7 +1,7 @@
 import Foundation
 
 /// MinMaxScaler scales features to a specified range (default [0, 1]).
-public final class MinMaxScaler: @unchecked Sendable {
+public final class MinMaxScaler: PreprocessingTransformer, @unchecked Sendable {
     public private(set) var dataMin: [Double]?
     public private(set) var dataMax: [Double]?
     public let range: (min: Double, max: Double)

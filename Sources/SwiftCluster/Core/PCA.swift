@@ -1,5 +1,8 @@
 import Foundation
 import Accelerate
+import MLX
+import SwiftPreprocessing
+@_exported import SwiftDataFrame
 
 #if ACCELERATE_NEW_LAPACK
   #if ACCELERATE_LAPACK_ILP64
@@ -30,10 +33,16 @@ private func dgesvd_wrapper(
     dgesvd_(jobu, jobvt, m, n, a, lda, s, u, ldu, vt, ldvt, work, lwork, info)
 }
 
-/// Principal Component Analysis (PCA) for dimensionality reduction using Accelerate LAPACK SVD.
+/// Principal Component Analysis (PCA) for dimensionality reduction using Accelerate LAPACK SVD or MLX SVD.
 public actor PCA {
     /// Number of components to keep.
     public let nComponents: Int
+    
+    /// Target compute device for PCA execution.
+    public let requestedDevice: ExecutionDevice
+    
+    /// Device actually used for the last fit operation.
+    public private(set) var resolvedDevice: ExecutionDevice?
     
     /// Mean values of features, computed during fit. Shape: [nFeatures]
     public private(set) var mean: [Double]?
@@ -44,18 +53,18 @@ public actor PCA {
     /// Explained variance of the selected components. Shape: [nComponents]
     public private(set) var explainedVariance: [Double]?
     
-    /// Initializes PCA with the number of components to keep.
-    /// - Parameter nComponents: Number of principal components.
-    public init(nComponents: Int) throws {
+    /// Initializes PCA with the number of components to keep and the target device.
+    public init(nComponents: Int, device: ExecutionDevice = .auto) throws {
         guard nComponents > 0 else {
             throw ClusterError.invalidParameter("nComponents must be greater than 0.")
         }
         self.nComponents = nComponents
+        self.requestedDevice = device
     }
     
     /// Fits the PCA model on the given dataset X.
     /// - Parameter X: A 2D array of shape [samples, features].
-    public func fit(_ X: [[Double]]) throws {
+    public func fit(_ X: [[Double]]) async throws {
         guard !X.isEmpty, !X[0].isEmpty else {
             throw ClusterError.emptyInput
         }
@@ -66,6 +75,34 @@ public actor PCA {
         guard nComponents <= min(numSamples, numFeatures) else {
             throw ClusterError.invalidParameter("nComponents (\(nComponents)) cannot be greater than min(samples: \(numSamples), features: \(numFeatures)).")
         }
+        
+        let device = await HardwareRouter.shared.resolveDevice(
+            for: "PCA",
+            sampleCount: numSamples,
+            featureCount: numFeatures,
+            requestedDevice: requestedDevice
+        )
+        self.resolvedDevice = device
+        
+        switch device {
+        case .cpu:
+            try fitCPU(X)
+        case .gpu, .ane, .auto:
+            let nComp = self.nComponents
+            let results = Device.withDefaultDevice(.gpu) {
+                Self.runFitGPU(X: X, nComponents: nComp)
+            }
+            self.mean = results.mean
+            self.components = results.components
+            self.explainedVariance = results.explainedVariance
+        }
+    }
+    
+    // MARK: - CPU Backend (LAPACK SVD)
+    
+    private func fitCPU(_ X: [[Double]]) throws {
+        let numSamples = X.count
+        let numFeatures = X[0].count
         
         // 1. Calculate column means
         var colMeans = [Double](repeating: 0.0, count: numFeatures)
@@ -112,7 +149,7 @@ public actor PCA {
         // Workspace query
         dgesvd_wrapper(&jobu, &jobvt, &m, &n, &a, &lda, &s, &u, &ldu, &vt, &ldvt, &workQuery, &lwork, &info)
         guard info == 0 else {
-            throw ClusterError.svdFailed(info: info)
+            throw ClusterError.svdFailed(info: Int32(info))
         }
         
         lwork = LAPACKInteger(workQuery[0])
@@ -121,14 +158,15 @@ public actor PCA {
         // Run actual SVD
         dgesvd_wrapper(&jobu, &jobvt, &m, &n, &a, &lda, &s, &u, &ldu, &vt, &ldvt, &work, &lwork, &info)
         guard info == 0 else {
-            throw ClusterError.svdFailed(info: info)
+            throw ClusterError.svdFailed(info: Int32(info))
         }
         
         // 4. Extract principal components (first nComponents rows of V^T)
-        // vt is column-major V^T of shape [minDim, numFeatures]
         var comp = [[Double]]()
+        comp.reserveCapacity(nComponents)
         for k in 0..<nComponents {
             var row = [Double]()
+            row.reserveCapacity(numFeatures)
             for c in 0..<numFeatures {
                 row.append(vt[c * minDim + k])
             }
@@ -138,6 +176,7 @@ public actor PCA {
         // 5. Calculate explained variance: singular_values^2 / (N - 1)
         let df = Double(max(1, numSamples - 1))
         var expVar = [Double]()
+        expVar.reserveCapacity(nComponents)
         for k in 0..<nComponents {
             expVar.append((s[k] * s[k]) / df)
         }
@@ -145,6 +184,52 @@ public actor PCA {
         self.mean = colMeans
         self.components = comp
         self.explainedVariance = expVar
+    }
+    
+    // MARK: - GPU Backend (MLX SVD)
+    
+    private static func runFitGPU(
+        X: [[Double]],
+        nComponents: Int
+    ) -> (mean: [Double], components: [[Double]], explainedVariance: [Double]) {
+        let numSamples = X.count
+        let numFeatures = X[0].count
+        
+        let flat = X.flatMap { $0.map { Float($0) } }
+        let X_arr = MLXArray(flat).reshaped([numSamples, numFeatures])
+        
+        let colMeans_arr = X_arr.mean(axis: 0)
+        let XCent = X_arr - colMeans_arr
+        
+        let (_, s_arr, vt_arr) = svd(XCent, stream: .cpu)
+        
+        eval(colMeans_arr, s_arr, vt_arr)
+        
+        let colMeans = colMeans_arr.asArray(Float.self).map { Double($0) }
+        let s = s_arr.asArray(Float.self).map { Double($0) }
+        let vt = vt_arr.asArray(Float.self)
+        
+        let vtCols = vt_arr.shape[1]
+        
+        var comp = [[Double]]()
+        comp.reserveCapacity(nComponents)
+        for k in 0..<nComponents {
+            var row = [Double]()
+            row.reserveCapacity(numFeatures)
+            for c in 0..<numFeatures {
+                row.append(Double(vt[k * vtCols + c]))
+            }
+            comp.append(row)
+        }
+        
+        let df = Double(max(1, numSamples - 1))
+        var expVar = [Double]()
+        expVar.reserveCapacity(nComponents)
+        for k in 0..<nComponents {
+            expVar.append((s[k] * s[k]) / df)
+        }
+        
+        return (colMeans, comp, expVar)
     }
     
     /// Projects the given dataset X onto the principal components.
@@ -160,6 +245,7 @@ public actor PCA {
         
         let numFeatures = mean.count
         var result = [[Double]]()
+        result.reserveCapacity(X.count)
         
         for row in X {
             guard row.count == numFeatures else {
@@ -183,10 +269,8 @@ public actor PCA {
     /// Fits the model on X and returns the projected data.
     /// - Parameter X: A 2D array of shape [samples, features].
     /// - Returns: Projected dataset of shape [samples, nComponents].
-    public func fitTransform(_ X: [[Double]]) throws -> [[Double]] {
-        try fit(X)
+    public func fitTransform(_ X: [[Double]]) async throws -> [[Double]] {
+        try await fit(X)
         return try transform(X)
     }
 }
-
-

@@ -1,12 +1,19 @@
+# Swift Package Manager
+.build/
+Packages/
+.swiftpm/
+/*.xcodeproj
 .DS_Store
-/.build
-/Packages
-xcuserdata/
-DerivedData/
-.swiftpm/configuration/registries.json
-.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
-.netrc
-ROADMAP/
 
-# Generated benchmark outputs (keep README)
-Benchmarks/Results/*.json
+# Python Benchmarks & Environments
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+
+# Artifacts & Local Results
+default.metallib
+swift_results.json
+python_results.json

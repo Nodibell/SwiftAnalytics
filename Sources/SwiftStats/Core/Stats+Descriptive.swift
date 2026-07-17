@@ -1,13 +1,14 @@
 import Accelerate
+import SwiftDataFrame
 
 // MARK: – Descriptive Statistics (vDSP-backed)
 
 extension Stats {
 
     /// Arithmetic mean using vDSP.mean.
-    public static func mean(_ values: [Double]) throws -> Double {
+    public static func mean(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
-        try requireNoNaN(values)
+        if checkNaN { try requireNoNaN(values) }
         return vDSP.mean(values)
     }
 
@@ -19,9 +20,9 @@ extension Stats {
 
     /// Sample or population variance.
     /// - Parameter ddof: Delta degrees of freedom (1 = sample, 0 = population).
-    public static func variance(_ values: [Double], ddof: Int = 1) throws -> Double {
+    public static func variance(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
-        try requireNoNaN(values)
+        if checkNaN { try requireNoNaN(values) }
         guard ddof >= 0 else { throw StatsError.invalidDDOF(ddof) }
         let n = Double(values.count)
         guard n > Double(ddof) else { throw StatsError.insufficientData(minimum: ddof + 1, got: values.count) }
@@ -37,14 +38,14 @@ extension Stats {
     }
 
     /// Standard deviation.
-    public static func standardDeviation(_ values: [Double], ddof: Int = 1) throws -> Double {
-        try variance(values, ddof: ddof).squareRoot()
+    public static func standardDeviation(_ values: [Double], ddof: Int = 1, checkNaN: Bool = true) throws -> Double {
+        try variance(values, ddof: ddof, checkNaN: checkNaN).squareRoot()
     }
 
     /// Median via sorted linear interpolation.
-    public static func median(_ values: [Double]) throws -> Double {
+    public static func median(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
-        try requireNoNaN(values)
+        if checkNaN { try requireNoNaN(values) }
         let sorted = values.sorted()
         let n = sorted.count
         if n % 2 == 1 {
@@ -64,9 +65,9 @@ extension Stats {
     }
 
     /// Percentile using linear interpolation (matches NumPy's default method).
-    public static func percentile(_ values: [Double], q: Double) throws -> Double {
+    public static func percentile(_ values: [Double], q: Double, checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values)
-        try requireNoNaN(values)
+        if checkNaN { try requireNoNaN(values) }
         guard q >= 0 && q <= 1 else { throw StatsError.invalidPercentile(q) }
         let sorted = values.sorted()
         let n      = Double(sorted.count)
@@ -78,17 +79,17 @@ extension Stats {
     }
 
     /// Multiple percentiles at once.
-    public static func quantiles(_ values: [Double], probs: [Double]) throws -> [Double] {
-        try probs.map { try percentile(values, q: $0) }
+    public static func quantiles(_ values: [Double], probs: [Double], checkNaN: Bool = true) throws -> [Double] {
+        try probs.map { try percentile(values, q: $0, checkNaN: checkNaN) }
     }
 
     /// Standardised third central moment (Fisher's definition).
-    public static func skewness(_ values: [Double]) throws -> Double {
+    public static func skewness(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 3)
-        try requireNoNaN(values)
+        if checkNaN { try requireNoNaN(values) }
         let n   = Double(values.count)
         let mu  = vDSP.mean(values)
-        let s   = try standardDeviation(values, ddof: 1)
+        let s   = try standardDeviation(values, ddof: 1, checkNaN: checkNaN)
         guard s > 0 else { return 0 }
 
         let diffs = values.map { $0 - mu }
@@ -97,12 +98,12 @@ extension Stats {
     }
 
     /// Excess kurtosis (Fisher's definition, normal distribution = 0).
-    public static func kurtosis(_ values: [Double]) throws -> Double {
+    public static func kurtosis(_ values: [Double], checkNaN: Bool = true) throws -> Double {
         try requireNonEmpty(values, minimum: 4)
-        try requireNoNaN(values)
+        if checkNaN { try requireNoNaN(values) }
         let n   = Double(values.count)
         let mu  = vDSP.mean(values)
-        let s   = try standardDeviation(values, ddof: 1)
+        let s   = try standardDeviation(values, ddof: 1, checkNaN: checkNaN)
         guard s > 0 else { return 0 }
 
         let m4 = values.map { pow($0 - mu, 4) }.reduce(0, +) / n
@@ -133,21 +134,21 @@ extension Stats {
     }
 
     /// Comprehensive descriptive statistics summary.
-    public static func describe(_ values: [Double], nullCount: Int = 0) throws -> DescriptiveStats {
+    public static func describe(_ values: [Double], nullCount: Int = 0, checkNaN: Bool = false) throws -> DescriptiveStats {
         try requireNonEmpty(values)
-        try requireNoNaN(values)
+        if checkNaN { try requireNoNaN(values) }
         return DescriptiveStats(
             count:             values.count,
-            mean:              try mean(values),
-            standardDeviation: try standardDeviation(values),
-            variance:          try variance(values),
+            mean:              try mean(values, checkNaN: checkNaN),
+            standardDeviation: try standardDeviation(values, checkNaN: checkNaN),
+            variance:          try variance(values, checkNaN: checkNaN),
             min:               try min(values),
-            q1:                try percentile(values, q: 0.25),
-            median:            try median(values),
-            q3:                try percentile(values, q: 0.75),
+            q1:                try percentile(values, q: 0.25, checkNaN: checkNaN),
+            median:            try median(values, checkNaN: checkNaN),
+            q3:                try percentile(values, q: 0.75, checkNaN: checkNaN),
             max:               try max(values),
-            skewness:          try skewness(values),
-            kurtosis:          try kurtosis(values),
+            skewness:          try skewness(values, checkNaN: checkNaN),
+            kurtosis:          try kurtosis(values, checkNaN: checkNaN),
             nullCount:         nullCount
         )
     }

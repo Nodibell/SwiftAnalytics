@@ -45,7 +45,7 @@ struct BenchmarkEntryPoint {
         let args = BenchmarkArgs.parse()
 
         print("╔════════════════════════════════════════════════════╗")
-        print("║      SwiftAnalytics Benchmark Suite — v0.7         ║")
+        print("║      SwiftAnalytics Benchmark Suite — v1.0         ║")
         print("╚════════════════════════════════════════════════════╝")
         print("Platform : \(platformString())")
         print("Swift    : \(swiftVersion())")
@@ -64,6 +64,9 @@ struct BenchmarkEntryPoint {
             DataFrameBenchmarks(),
             MLBenchmarks(),
             ForecastBenchmarks(),
+            LLMBenchmarks(),
+            ExplainBenchmarks(),
+            PrivacyBenchmarks(),
         ]
 
         var allResults: [BenchmarkResult] = []

@@ -1,4 +1,5 @@
 import Foundation
+@_exported import SwiftDataFrame
 
 /// Protocol representing a supervised classifier estimator.
 public protocol ClassifierEstimator: Sendable {

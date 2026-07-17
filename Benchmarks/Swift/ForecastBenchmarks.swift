@@ -39,10 +39,10 @@ struct ForecastBenchmarks: BenchmarkSuite {
     func run() async -> [BenchmarkResult] {
         var results: [BenchmarkResult] = []
 
-        // ── 1. Holt-Winters (1000 points, period = 12) ───────────────────
-        let hwSeries = ForecastBenchmarks.makeSeasonal(n: 1_000, period: 12)
+        // ── 1. Holt-Winters (50k points, period = 12) ───────────────────
+        let hwSeries = ForecastBenchmarks.makeSeasonal(n: 50_000, period: 12)
         let hwResult = await BenchmarkRunner.run(
-            name: "Holt-Winters fit (1k pts, period=12)",
+            name: "Holt-Winters fit (50k pts, period=12)",
             module: module,
             warmup: 1,
             iterations: 5
@@ -55,10 +55,10 @@ struct ForecastBenchmarks: BenchmarkSuite {
         }
         results.append(hwResult)
 
-        // ── 2. ARIMA(1,1,1) — 500 points ─────────────────────────────────
-        let arimaSeries = ForecastBenchmarks.makeRandomWalk(n: 500)
+        // ── 2. ARIMA(1,1,1) — 50k points ─────────────────────────────────
+        let arimaSeries = ForecastBenchmarks.makeRandomWalk(n: 50_000)
         let arimaResult = await BenchmarkRunner.run(
-            name: "ARIMA(1,1,1) fit (500 pts)",
+            name: "ARIMA(1,1,1) fit (50k pts)",
             module: module,
             warmup: 1,
             iterations: 5
@@ -70,7 +70,7 @@ struct ForecastBenchmarks: BenchmarkSuite {
 
         // ── 3. ARIMA forecast (horizon = 24) ──────────────────────────────
         let arimaForecastResult = await BenchmarkRunner.run(
-            name: "ARIMA(1,1,1) forecast horizon=24",
+            name: "ARIMA(1,1,1) forecast horizon=24 (50k pts)",
             module: module,
             warmup: 1,
             iterations: 5

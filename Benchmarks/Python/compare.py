@@ -27,6 +27,12 @@ CI_GATE_KEYS = frozenset({
     "arima forecast horizon=24",
     "kalman filter 1d",
     "ts decomposition additive",
+    "randomforest fit",
+    "gbdt regressor fit",
+    "llm forward pass",
+    "kernelshap explain",
+    "ringlwe encrypt/decrypt",
+    "pnns classify",
 })
 
 
@@ -45,9 +51,14 @@ def main():
     parser.add_argument("swift_json",  help="Path to swift_results.json")
     parser.add_argument("python_json", help="Path to python_results.json")
     parser.add_argument(
-        "--regression-threshold", type=float, default=2.0,
+        "--regression-threshold", type=float, default=1.2,
         help="Speedup ratio below which a CI failure is triggered "
              "(default: 2.0 = Swift must not be >2× slower on gated benches)",
+    )
+    parser.add_argument(
+        "--min-ms-threshold", type=float, default=1.0,
+        help="Minimum Swift execution time (in ms) to be considered for a CI failure. "
+             "Prevents failing on micro-benchmarks that execute almost instantly."
     )
     parser.add_argument(
         "--gate-all", action="store_true",
@@ -119,7 +130,9 @@ def main():
               f"{sp_str:>9}  {winner:>8}  {gate_tag:>6}")
 
         if speedup < (1.0 / args.regression_threshold):
-            if r["gated"]:
+            if r["swift_ms"] < args.min_ms_threshold:
+                known_gaps.append(r)
+            elif r["gated"]:
                 regression_failures.append(r)
             else:
                 known_gaps.append(r)
