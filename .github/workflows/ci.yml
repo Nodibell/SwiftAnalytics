@@ -14,6 +14,7 @@ env:
   SWIFT_PACKAGE_DIR: "."
   MACOSX_DEPLOYMENT_TARGET: "14.0"
   MLX_DEVICE: cpu
+  MLX_FORCE_CPU: "1"
   MLX_METAL_DISABLE: "1"
 
 jobs:
@@ -29,7 +30,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       - run: swift build -v
 
   # 2. Test
@@ -44,11 +45,12 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       
       - name: Run tests
         env:
           MLX_DEVICE: cpu
+          MLX_FORCE_CPU: "1"
           MLX_METAL_DISABLE: "1"
           METAL_DEVICE_WRAPPER_TYPE: cpu
         run: swift test --enable-code-coverage -v --skip SwiftLLMTests
@@ -76,7 +78,7 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       - uses: actions/setup-python@v5
         with: { python-version: "3.11", cache: "pip", cache-dependency-path: Benchmarks/Python/requirements.txt }
       - name: Install dependencies
@@ -84,7 +86,9 @@ jobs:
       - name: Run Benchmarks
         env:
           MLX_DEVICE: cpu
+          MLX_FORCE_CPU: "1"
           MLX_METAL_DISABLE: "1"
+          METAL_DEVICE_WRAPPER_TYPE: cpu
         run: |
           swift build -c release --product SwiftAnalyticsBenchmarks
           mkdir -p Benchmarks/Results
