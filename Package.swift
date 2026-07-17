@@ -3,10 +3,12 @@
 import PackageDescription
 
 let globalSwiftSettings: [SwiftSetting] = [
-    .enableUpcomingFeature("ExistentialAny"),
+    .enableUpcomingFeature("ExistentialAny")
+]
+
+let globalCSettings: [CSetting] = [
     .define("ACCELERATE_NEW_LAPACK"),
-    .define("ACCELERATE_LAPACK_ILP64"),
-    .unsafeFlags(["-Xcc", "-DACCELERATE_NEW_LAPACK", "-Xcc", "-DACCELERATE_LAPACK_ILP64"])
+    .define("ACCELERATE_LAPACK_ILP64")
 ]
 
 let package = Package(
@@ -47,13 +49,15 @@ let package = Package(
                 .product(name: "Arrow", package: "arrow-swift")
             ],
             path: "Sources/SwiftDataFrame",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftDataFrameTests",
             dependencies: ["SwiftDataFrame"],
             path: "Tests/SwiftDataFrameTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftStats ───────────────────────────────────────────────────
@@ -62,15 +66,18 @@ let package = Package(
             dependencies: ["SwiftDataFrame"],
             path: "Sources/SwiftStats",
             swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings,
             linkerSettings: [
                 .linkedFramework("Accelerate"),
             ]
+
         ),
         .testTarget(
             name: "SwiftStatsTests",
             dependencies: ["SwiftStats"],
             path: "Tests/SwiftStatsTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftPreprocessing ────────────────────────────────────────────
@@ -81,13 +88,15 @@ let package = Package(
                 .product(name: "MLX", package: "mlx-swift"),
             ],
             path: "Sources/SwiftPreprocessing",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftPreprocessingTests",
             dependencies: ["SwiftPreprocessing"],
             path: "Tests/SwiftPreprocessingTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftML ──────────────────────────────────────────────────────
@@ -99,13 +108,15 @@ let package = Package(
                 .product(name: "MLXNN", package: "mlx-swift"),
             ],
             path: "Sources/SwiftML",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftMLTests",
             dependencies: ["SwiftML"],
             path: "Tests/SwiftMLTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftCluster ─────────────────────────────────────────────────
@@ -117,11 +128,8 @@ let package = Package(
                 .product(name: "MLX", package: "mlx-swift"),
             ],
             path: "Sources/SwiftCluster",
-            swiftSettings: [
-                .define("ACCELERATE_NEW_LAPACK"),
-                .unsafeFlags(["-Xcc", "-DACCELERATE_NEW_LAPACK"]),
-                .enableUpcomingFeature("ExistentialAny")
-            ],
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings,
             linkerSettings: [
                 .linkedFramework("Accelerate"),
             ]
@@ -130,7 +138,8 @@ let package = Package(
             name: "SwiftClusterTests",
             dependencies: ["SwiftCluster", "SwiftPreprocessing"],
             path: "Tests/SwiftClusterTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftNLP ─────────────────────────────────────────────────────
@@ -140,13 +149,15 @@ let package = Package(
                 "SwiftDataFrame",
             ],
             path: "Sources/SwiftNLP",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftNLPTests",
             dependencies: ["SwiftNLP"],
             path: "Tests/SwiftNLPTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftOptimize ────────────────────────────────────────────────
@@ -157,13 +168,15 @@ let package = Package(
                 "SwiftML",
             ],
             path: "Sources/SwiftOptimize",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftOptimizeTests",
             dependencies: ["SwiftOptimize"],
             path: "Tests/SwiftOptimizeTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftForecast ────────────────────────────────────────────────
@@ -175,6 +188,7 @@ let package = Package(
             ],
             path: "Sources/SwiftForecast",
             swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings,
             linkerSettings: [
                 .linkedFramework("Accelerate"),
             ]
@@ -183,7 +197,8 @@ let package = Package(
             name: "SwiftForecastTests",
             dependencies: ["SwiftForecast"],
             path: "Tests/SwiftForecastTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftLLM ─────────────────────────────────────────────────────
@@ -195,13 +210,15 @@ let package = Package(
                 .product(name: "MLXNN", package: "mlx-swift"),
             ],
             path: "Sources/SwiftLLM",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftLLMTests",
             dependencies: ["SwiftLLM"],
             path: "Tests/SwiftLLMTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftExplain ─────────────────────────────────────────────────
@@ -214,13 +231,15 @@ let package = Package(
                 "SwiftPreprocessing",
             ],
             path: "Sources/SwiftExplain",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftExplainTests",
             dependencies: ["SwiftExplain"],
             path: "Tests/SwiftExplainTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftPrivacy ─────────────────────────────────────────────────
@@ -231,13 +250,15 @@ let package = Package(
                 "SwiftStats",
             ],
             path: "Sources/SwiftPrivacy",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
         .testTarget(
             name: "SwiftPrivacyTests",
             dependencies: ["SwiftPrivacy"],
             path: "Tests/SwiftPrivacyTests",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
 
         // ── SwiftAnalyticsBenchmarks ──────────────────────────────────────
@@ -257,7 +278,8 @@ let package = Package(
                 "SwiftPrivacy",
             ],
             path: "Benchmarks/Swift",
-            swiftSettings: globalSwiftSettings
+            swiftSettings: globalSwiftSettings,
+            cSettings: globalCSettings
         ),
     ]
 )
