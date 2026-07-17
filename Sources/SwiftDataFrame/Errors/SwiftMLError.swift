@@ -53,6 +53,7 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
     case invalidBeta(Double)
     case invalidGamma(Double)
     case invalidPeriod(Int)
+    case invalidSeasonalPeriod(Int)
     case invalidAROrder(Int)
     case invalidDifferencing(Int)
     case invalidMAOrder(Int)
@@ -155,6 +156,8 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
             return "Gamma parameter (\(gamma)) must be in (0, 1)."
         case .invalidPeriod(let period):
             return "Seasonality period (\(period)) must be >= 2."
+        case .invalidSeasonalPeriod(let s):
+            return "Seasonal period (\(s)) must be >= 1."
         case .invalidAROrder(let p):
             return "AR order p (\(p)) must be >= 0."
         case .invalidDifferencing(let d):

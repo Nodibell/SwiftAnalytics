@@ -17,3 +17,4 @@ env/
 default.metallib
 swift_results.json
 python_results.json
+build_errors.txt

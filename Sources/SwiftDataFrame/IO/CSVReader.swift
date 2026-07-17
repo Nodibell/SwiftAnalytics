@@ -197,4 +197,166 @@ internal enum CSVReader {
         
         return lines
     }
+
+    // MARK: – Streaming CSV Reader (v1.1)
+
+    static func readStream(url: URL, options: CSVReadOptions, chunkSize: Int) -> AsyncThrowingStream<DataFrame, any Error> {
+        AsyncThrowingStream(DataFrame.self) { continuation in
+            let task = Task {
+                do {
+                    guard FileManager.default.fileExists(atPath: url.path) else {
+                        throw DataFrameError.fileNotFound(url)
+                    }
+                    
+                    let fileHandle = try FileHandle(forReadingFrom: url)
+                    defer { try? fileHandle.close() }
+                    
+                    var remainder = ""
+                    var headers: [String]? = nil
+                    var isFirstChunk = true
+                    let delim = options.delimiter
+                    
+                    var pendingRows: [String] = []
+                    let bufferSize = 256 * 1024
+                    
+                    while !Task.isCancelled {
+                        let data: Data
+                        if #available(macOS 10.15.4, iOS 13.4, watchOS 6.2, tvOS 13.4, *) {
+                            guard let chunkData = try fileHandle.read(upToCount: bufferSize) else { break }
+                            data = chunkData
+                        } else {
+                            data = fileHandle.readData(ofLength: bufferSize)
+                        }
+                        if data.isEmpty { break }
+                        
+                        guard let str = String(data: data, encoding: .utf8) else {
+                            throw DataFrameError.parseError(line: 0, description: "Invalid UTF-8 encoding in chunk")
+                        }
+                        
+                        let combined = remainder + str
+                        var lines = splitLines(combined)
+                        
+                        if !combined.hasSuffix("\n") && !combined.hasSuffix("\r") {
+                            if let last = lines.popLast() {
+                                remainder = last
+                            } else {
+                                remainder = ""
+                            }
+                        } else {
+                            remainder = ""
+                        }
+                        
+                        for line in lines {
+                            let trimmed = line.trimmingCharacters(in: .whitespaces)
+                            if trimmed.isEmpty { continue }
+                            
+                            if isFirstChunk && options.hasHeader {
+                                headers = parseRow(line, delimiter: delim)
+                                isFirstChunk = false
+                                continue
+                            } else if isFirstChunk {
+                                let firstRow = parseRow(line, delimiter: delim)
+                                headers = firstRow.indices.map { "col\($0)" }
+                                isFirstChunk = false
+                                pendingRows.append(line)
+                                continue
+                            }
+                            
+                            pendingRows.append(line)
+                            
+                            if pendingRows.count >= chunkSize {
+                                if let h = headers {
+                                    let chunkDF = try await parseLines(pendingRows, headers: h, options: options)
+                                    continuation.yield(chunkDF)
+                                }
+                                pendingRows.removeAll(keepingCapacity: true)
+                            }
+                        }
+                    }
+                    
+                    if !remainder.isEmpty && !Task.isCancelled {
+                        let trimmed = remainder.trimmingCharacters(in: .whitespaces)
+                        if !trimmed.isEmpty {
+                            pendingRows.append(remainder)
+                        }
+                    }
+                    
+                    if !pendingRows.isEmpty && !Task.isCancelled {
+                        if let h = headers {
+                            let chunkDF = try await parseLines(pendingRows, headers: h, options: options)
+                            continuation.yield(chunkDF)
+                        }
+                    }
+                    
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            
+            continuation.onTermination = { termination in
+                if case .cancelled = termination {
+                    task.cancel()
+                }
+            }
+        }
+    }
+
+    private static func parseLines(_ lines: [String], headers: [String], options: CSVReadOptions) async throws -> DataFrame {
+        let colCount = headers.count
+        let rowCount = lines.count
+        let delim = options.delimiter
+        
+        let numPartitions = min(8, max(1, ProcessInfo.processInfo.activeProcessorCount))
+        let partitionSize = (rowCount + numPartitions - 1) / numPartitions
+        
+        var rawCells: [[String?]] = Array(repeating: Array(repeating: nil, count: rowCount), count: colCount)
+        
+        try await withThrowingTaskGroup(of: (Int, [[String?]]).self) { group in
+            for part in 0..<numPartitions {
+                let startIdx = part * partitionSize
+                let endIdx = min(rowCount, startIdx + partitionSize)
+                if startIdx >= endIdx { continue }
+                
+                group.addTask {
+                    var segmentCells: [[String?]] = Array(repeating: Array(repeating: nil, count: endIdx - startIdx), count: colCount)
+                    for rIdx in startIdx..<endIdx {
+                        let row = parseRow(lines[rIdx], delimiter: delim)
+                        guard row.count == colCount else {
+                            throw DataFrameError.parseError(
+                                line: rIdx + 1,
+                                description: "Expected \(colCount) columns, found \(row.count)."
+                            )
+                        }
+                        let localIdx = rIdx - startIdx
+                        for (cIdx, cell) in row.enumerated() {
+                            let trimmed = cell.trimmingCharacters(in: .whitespaces)
+                            segmentCells[cIdx][localIdx] = options.nullValues.contains(trimmed) ? nil : trimmed
+                        }
+                    }
+                    return (startIdx, segmentCells)
+                }
+            }
+            
+            for try await (startIdx, segmentCells) in group {
+                let segmentLen = segmentCells[0].count
+                for cIdx in 0..<colCount {
+                    for localIdx in 0..<segmentLen {
+                        rawCells[cIdx][startIdx + localIdx] = segmentCells[cIdx][localIdx]
+                    }
+                }
+            }
+        }
+        
+        var columns: [any AnyColumn] = []
+        for (ci, name) in headers.enumerated() {
+            let cells = rawCells[ci]
+            let col = options.inferTypes
+                ? inferColumn(name: name, cells: cells)
+                : TypedColumn<String>(name: name, values: cells)
+            columns.append(col)
+        }
+        
+        return try DataFrame(columns: columns)
+    }
 }

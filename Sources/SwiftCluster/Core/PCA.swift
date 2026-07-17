@@ -4,14 +4,10 @@ import MLX
 import SwiftPreprocessing
 @_exported import SwiftDataFrame
 
-#if ACCELERATE_NEW_LAPACK
-  #if ACCELERATE_LAPACK_ILP64
-  typealias LAPACKInteger = Int
-  #else
-  typealias LAPACKInteger = Int32
-  #endif
+#if ACCELERATE_LAPACK_ILP64
+typealias LAPACKInteger = Int
 #else
-typealias LAPACKInteger = __CLPK_integer
+typealias LAPACKInteger = Int32
 #endif
 
 private func dgesvd_wrapper(

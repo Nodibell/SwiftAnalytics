@@ -1,14 +1,10 @@
 import Foundation
 import Accelerate
 
-#if ACCELERATE_NEW_LAPACK
-  #if ACCELERATE_LAPACK_ILP64
-  typealias LAPACKInteger = Int
-  #else
-  typealias LAPACKInteger = Int32
-  #endif
+#if ACCELERATE_LAPACK_ILP64
+typealias LAPACKInteger = Int
 #else
-typealias LAPACKInteger = __CLPK_integer
+typealias LAPACKInteger = Int32
 #endif
 
 // Wrappers to avoid deprecation warnings
@@ -19,7 +15,6 @@ func forecast_dgemm(
     _ B: [Double], _ ldb: Int,
     _ beta: Double, _ C: inout [Double], _ ldc: Int
 ) {
-    #if ACCELERATE_NEW_LAPACK
     cblas_dgemm(
         Order, TransA, TransB,
         M, N, K,
@@ -27,15 +22,6 @@ func forecast_dgemm(
         B, ldb,
         beta, &C, ldc
     )
-    #else
-    cblas_dgemm(
-        Order, TransA, TransB,
-        Int32(M), Int32(N), Int32(K),
-        alpha, A, Int32(lda),
-        B, Int32(ldb),
-        beta, &C, Int32(ldc)
-    )
-    #endif
 }
 
 func forecast_dgemv(
@@ -45,7 +31,6 @@ func forecast_dgemv(
     _ X: [Double], _ incX: Int,
     _ beta: Double, _ Y: inout [Double], _ incY: Int
 ) {
-    #if ACCELERATE_NEW_LAPACK
     cblas_dgemv(
         Order, TransA,
         M, N,
@@ -53,15 +38,6 @@ func forecast_dgemv(
         X, incX,
         beta, &Y, incY
     )
-    #else
-    cblas_dgemv(
-        Order, TransA,
-        Int32(M), Int32(N),
-        alpha, A, Int32(lda),
-        X, Int32(incX),
-        beta, &Y, Int32(incY)
-    )
-    #endif
 }
 
 func dgesv_wrapper(

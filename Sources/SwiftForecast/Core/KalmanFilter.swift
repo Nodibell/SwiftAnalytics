@@ -1,11 +1,7 @@
 import Foundation
 import Accelerate
 
-#if ACCELERATE_NEW_LAPACK
-// Int32 version
-#else
-// __CLPK_integer version
-#endif
+
 
 public actor KalmanFilter {
     private let stateSize: Int

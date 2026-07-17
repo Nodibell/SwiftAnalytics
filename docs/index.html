@@ -437,10 +437,11 @@
     <aside>
         <div class="logo-area">
             <h1>SwiftAnalytics</h1>
-            <span>v1.0.0 Stable</span>
+            <span>v1.1.0 Stable</span>
         </div>
         <ul class="nav-links">
             <li><a href="#hero" class="nav-item active" onclick="showSection('hero')">📌 Overview</a></li>
+            <li><a href="#whats-new" class="nav-item" onclick="showSection('whats-new')">🔥 What's New in v1.1</a></li>
             <li><a href="#benchmarks" class="nav-item" onclick="showSection('benchmarks')">📊 Benchmarks</a></li>
             <li><a href="#architecture" class="nav-item" onclick="showSection('architecture')">🛠 Architecture</a></li>
             <li><a href="#quickstart" class="nav-item" onclick="showSection('quickstart')">💻 Quick Start</a></li>
@@ -461,6 +462,44 @@
                 <div class="badge accent">🚀 macOS 15+ & iOS 18+</div>
                 <div class="badge">🔒 Swift 6 strict concurrency ready</div>
                 <div class="badge">🔥 Metal-GPU & Accelerate-CPU</div>
+            </div>
+        </section>
+
+        <!-- What's New in v1.1 Section -->
+        <section id="whats-new" style="margin-bottom: 4rem;">
+            <h2 class="section-title">🔥 What's New in v1.1</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
+                Version 1.1 brings dramatic I/O performance improvements, naively decodes AI weights, and expands time-series and cryptographic toolkits.
+            </p>
+            <div class="grid">
+                <div class="card">
+                    <span class="card-icon">📥</span>
+                    <h3>Streaming CSV Parser</h3>
+                    <p>
+                        High-performance columnar CSV parser with a chunk-buffered <code>AsyncSequence</code> interface. Offloads row-parsing to a Swift <code>TaskGroup</code> worker thread pool, reducing memory consumption and speeding up loading times.
+                    </p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🧠</span>
+                    <h3>SafeTensors & GGUF Parser</h3>
+                    <p>
+                        Native binary parsers for SafeTensors and GGUF weight files. Directly parses JSON metadata headers and constructs <code>MLXArray</code> GPU buffers using zero-copy memory mapping.
+                    </p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🔒</span>
+                    <h3>CKKS Cryptographic Scheme</h3>
+                    <p>
+                        Real-number homomorphic encryption scheme supporting fixed-point polynomial encoding, homomorphic addition, multiplication, and rescale operations modulo cyclotomic polynomials.
+                    </p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">📈</span>
+                    <h3>SARIMA & GARCH Models</h3>
+                    <p>
+                        Extends the time-series forecasting suite with seasonal ARIMA model estimators and GARCH conditional variance models with coordinate descent MLE parameter optimization.
+                    </p>
+                </div>
             </div>
         </section>
 
@@ -717,7 +756,7 @@ let predictions = try await regressor.predict(features: X_test)</code></pre>
             <div class="grid">
                 <div class="card">
                     <h3>SwiftDataFrame</h3>
-                    <p>High-performance columnar data manipulation with zero-copy mappings built on Apache Arrow.</p>
+                    <p>High-performance columnar data manipulation with zero-copy mappings built on Apache Arrow. Supports parallel streaming CSV parsing.</p>
                 </div>
                 <div class="card">
                     <h3>SwiftStats</h3>
@@ -733,11 +772,15 @@ let predictions = try await regressor.predict(features: X_test)</code></pre>
                 </div>
                 <div class="card">
                     <h3>SwiftLLM</h3>
-                    <p>GPU causal Transformer-decoders and Sampler interfaces powered by MLX for local AI inference.</p>
+                    <p>GPU causal Transformer-decoders and Sampler interfaces powered by MLX for local AI inference. Supports zero-copy SafeTensors/GGUF parsing.</p>
                 </div>
                 <div class="card">
                     <h3>SwiftPrivacy</h3>
-                    <p>Homomorphic Encryption schemes (Ring-LWE, PNNS) for private nearest-neighbor classification.</p>
+                    <p>Homomorphic Encryption schemes (Ring-LWE, CKKS, PNNS) for private nearest-neighbor classification and floating-point secure computing.</p>
+                </div>
+                <div class="card">
+                    <h3>SwiftForecast</h3>
+                    <p>Time series forecasting (decomposition, Holt-Winters, ARIMA, SARIMA, Kalman filtering, and GARCH volatility modeling).</p>
                 </div>
             </div>
         </section>

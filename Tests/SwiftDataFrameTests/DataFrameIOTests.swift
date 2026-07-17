@@ -167,4 +167,56 @@ struct DataFrameIOTests {
         #expect(readBackDf.shape.columns == 3)
         #expect(readBackDf[column: "description", as: String.self]?.values == ["Hello\nWorld", "This;is;fine", "Embedded \"quotes\" here"])
     }
+
+    @Test("Read CSV via Async Sequence Stream")
+    func testCSVStreaming() async throws {
+        let csvContent = """
+        name,val
+        Row1,1.0
+        Row2,2.0
+        Row3,3.0
+        Row4,4.0
+        Row5,5.0
+        Row6,6.0
+        Row7,7.0
+        Row8,8.0
+        Row9,9.0
+        Row10,10.0
+        """
+
+        let fm = FileManager.default
+        let currentDir = URL(fileURLWithPath: fm.currentDirectoryPath)
+        let fileURL = currentDir.appendingPathComponent("test_temp_streaming_df.csv")
+
+        if fm.fileExists(atPath: fileURL.path) {
+            try fm.removeItem(at: fileURL)
+        }
+
+        defer {
+            try? fm.removeItem(at: fileURL)
+        }
+
+        try csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
+
+        var options = CSVReadOptions()
+        options.inferTypes = true
+        let stream = DataFrame.readCSVStream(contentsOf: fileURL, chunkSize: 3, options: options)
+
+        var chunks: [DataFrame] = []
+        for try await chunk in stream {
+            chunks.append(chunk)
+        }
+
+        #expect(chunks.count == 4)
+        #expect(chunks[0].shape.rows == 3)
+        #expect(chunks[1].shape.rows == 3)
+        #expect(chunks[2].shape.rows == 3)
+        #expect(chunks[3].shape.rows == 1)
+
+        let firstChunkNames = chunks[0][column: "name", as: String.self]?.values
+        #expect(firstChunkNames == ["Row1", "Row2", "Row3"])
+
+        let lastChunkVal = chunks[3][column: "val", as: Double.self]?.values
+        #expect(lastChunkVal == [10.0])
+    }
 }

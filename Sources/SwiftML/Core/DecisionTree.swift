@@ -101,7 +101,7 @@ func bestSplit(
 
                     let gain = ( (leftSum * leftSum / leftCount) + (rightSum * rightSum / rightCount) - baseTerm ) / n
 
-                    if best == nil || gain > best!.gain {
+                    if best == nil || gain > (best?.gain ?? -Double.infinity) {
                         let threshold = (X[idx][fi] + X[nextIdx][fi]) / 2.0
                         best = SplitResult(
                             featureIndex: fi,
@@ -171,7 +171,7 @@ func bestSplit(
 
                     let gain = parentImpurity - (leftCount / n) * leftImpurity - (rightCount / n) * rightImpurity
 
-                    if best == nil || gain > best!.gain {
+                    if best == nil || gain > (best?.gain ?? -Double.infinity) {
                         let threshold = (X[idx][fi] + X[nextIdx][fi]) / 2.0
                         best = SplitResult(
                             featureIndex: fi,

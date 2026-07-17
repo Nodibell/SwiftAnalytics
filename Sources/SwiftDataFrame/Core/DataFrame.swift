@@ -56,6 +56,15 @@ public struct DataFrame: Sendable {
         self = df
     }
 
+    /// Reads a CSV file as a stream of DataFrame chunks.
+    public static func readCSVStream(
+        contentsOf url: URL,
+        chunkSize: Int = 10000,
+        options: CSVReadOptions = .default
+    ) -> AsyncThrowingStream<DataFrame, any Error> {
+        CSVReader.readStream(url: url, options: options, chunkSize: chunkSize)
+    }
+
     /// Creates a DataFrame by reading a JSON file (array of objects).
     public init(json url: URL) async throws {
         let df = try await JSONReader.read(url: url)

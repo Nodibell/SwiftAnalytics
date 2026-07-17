@@ -8,17 +8,17 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 
 ## 🚀 Core Modules
 
-* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`.
+* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Now supports parallel chunk-buffered streaming CSV parsing.
 * **`SwiftStats`**: Vectorized descriptive statistics, distributions, and hypothesis tests powered by `Accelerate vDSP`.
 * **`SwiftPreprocessing`**: Feature scaling, categorical encoding, binning, and preprocessing pipelines (`Pipeline`).
 * **`SwiftML`**: Classical estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs).
 * **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN) and clustering (K-Means).
 * **`SwiftOptimize`**: Model validation (K-Fold cross-validation) and parallel hyperparameter optimization (`GridSearchCV`).
-* **`SwiftForecast`**: Time series analysis (additive/multiplicative decomposition, Holt-Winters, ARIMA, Kalman filtering).
+* **`SwiftForecast`**: Time series analysis (decomposition, Holt-Winters, ARIMA, SARIMA seasonal models, GARCH volatility, Kalman filtering).
 * **`SwiftNLP`**: Tokenization (Word / subword BPE Tokenizers) and static word embeddings.
 * **`SwiftExplain`**: Black-box model explainability using a parallelized `KernelSHAP` implementation.
-* **`SwiftLLM`**: Local text generation on GPU using casual transformer-decoder architectures and MLX.
-* **`SwiftPrivacy`**: Cryptographic machine learning on encrypted data (Ring-LWE, PNNS) utilizing homomorphic encryption.
+* **`SwiftLLM`**: Local text generation on GPU using casual transformer-decoder architectures and MLX. Supports zero-copy SafeTensors and GGUF weight parsing.
+* **`SwiftPrivacy`**: Cryptographic machine learning on encrypted data (Ring-LWE, CKKS, PNNS) utilizing homomorphic encryption.
 
 ---
 
@@ -75,7 +75,7 @@ We identified that running $O(N)$ CPU sweeps to check for `NaN` presence in stat
 
 ## ⚠️ Known Gaps & Limitations
 
-1. **High CSV Parsing Complexity**: The current CSV reader implementation in `SwiftDataFrame` runs with $O(N)$ CPU overhead and does not support streaming parsing of large datasets, resulting in slower reading rates than Pandas. Improving I/O parsing is scheduled for future minor releases.
+1. **Standard CSV Parser Overhead**: The standard CSV reader runs with $O(N)$ CPU overhead. In v1.1.0, this is resolved by using the parallel streaming CSV parser (`DataFrame.readCSVStream`) returning `AsyncThrowingStream` for high-performance file parsing.
 2. **MLX Sendable Isolation**: `MLXArray` does not conform to `Sendable`. This is handled in the library through strict actor isolation and passing memory ownership tokens (`WiredMemoryTicket`).
 
 ---

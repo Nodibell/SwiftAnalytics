@@ -2,11 +2,7 @@ import Foundation
 import Accelerate
 import SwiftStats
 
-#if ACCELERATE_NEW_LAPACK
-// Int32 version
-#else
-// __CLPK_integer version
-#endif
+
 
 public actor ARIMAModel {
     public let order: (p: Int, d: Int, q: Int)
