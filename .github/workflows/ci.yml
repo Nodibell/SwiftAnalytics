@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ main, develop ]
 
-# Cancel in-progress runs on the same branch when a new push arrives
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -14,12 +13,12 @@ concurrency:
 env:
   SWIFT_PACKAGE_DIR: "."
   MACOSX_DEPLOYMENT_TARGET: "14.0"
+  MLX_DEVICE: cpu
 
 jobs:
-  # ── Job 1: Build + Unit Tests ───────────────────────────────────────────────
   build-and-test:
     name: Build & Test (macOS / Apple Silicon)
-    runs-on: macos-latest          # Apple Silicon M1 – required for Accelerate & Metal
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -36,42 +35,22 @@ jobs:
           path: ${{ env.SWIFT_PACKAGE_DIR }}/.build
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: ${{ runner.os }}-spm-
-
-      - name: Setup Metal libraries
-        run: |
-          # Preload Metal libraries in the environment
-          xcrun metal -v 2>&1 | head -5 || true
-          # Build a minimal Metal library to ensure framework is loaded
-          mkdir -p /tmp/metal_test
-          echo "kernel void test(device float* p [[buffer(0)]], uint id [[thread_index_in_grid]]) { p[id] = 1.0; }" > /tmp/metal_test/test.metal
-          xcrun metal -c /tmp/metal_test/test.metal -o /tmp/metal_test/test.ir 2>&1 || true
       
       - name: Build (debug)
         run: swift build -v
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
       - name: Run tests with code coverage
-        env:
-          MLX_DEVICE: cpu
         run: swift test --enable-code-coverage -v --skip SwiftLLMTests
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
       - name: Export LCOV coverage report
         run: |
-          # Locate the test binary – name depends on Swift version
           BUILD_DIR=$(swift build --show-bin-path -c debug)
           PROFDATA="${{ env.SWIFT_PACKAGE_DIR }}/.build/debug/codecov/default.profdata"
-
-          # Collect all test binary paths
-          TEST_BINS=$(find "$BUILD_DIR" -name "*.xctest" -type d 2>/dev/null | \
-            while read d; do echo "$d/Contents/MacOS/$(basename "${d%.xctest}")"; done | \
-            tr '\n' ' ')
-
+          TEST_BINS=$(find "$BUILD_DIR" -name "*.xctest" -type d 2>/dev/null | while read d; do echo "$d/Contents/MacOS/$(basename "${d%.xctest}")"; done | tr '\n' ' ')
           if [ -n "$TEST_BINS" ]; then
-            xcrun llvm-cov export \
-              -format="lcov" \
-              -instr-profile="$PROFDATA" \
-              $TEST_BINS > coverage.lcov 2>/dev/null || true
+            xcrun llvm-cov export -format="lcov" -instr-profile="$PROFDATA" $TEST_BINS > coverage.lcov 2>/dev/null || true
           fi
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
@@ -80,13 +59,12 @@ jobs:
         with:
           file: ${{ env.SWIFT_PACKAGE_DIR }}/coverage.lcov
           token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false   # do not fail build if Codecov upload fails
+          fail_ci_if_error: false
 
-  # ── Job 2: Performance Benchmarks ─────────────────────────────────────────
   performance-check:
     name: Performance Regression Check
     runs-on: macos-latest
-    needs: build-and-test          # only run if tests pass
+    needs: build-and-test
 
     steps:
       - name: Checkout repository
@@ -96,13 +74,6 @@ jobs:
         uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: 'latest'
-
-      - name: Cache Swift Package Manager dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.SWIFT_PACKAGE_DIR }}/.build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: ${{ runner.os }}-spm-
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -124,29 +95,22 @@ jobs:
       - name: Run Swift benchmarks
         run: |
           mkdir -p Benchmarks/Results
-          swift run -c release SwiftAnalyticsBenchmarks \
-            --json Benchmarks/Results/swift_results.json
+          swift run -c release SwiftAnalyticsBenchmarks --json Benchmarks/Results/swift_results.json
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
       - name: Run Python benchmarks
         run: |
-          python3 Benchmarks/Python/benchmarks.py \
-            --json Benchmarks/Results/python_results.json
+          python3 Benchmarks/Python/benchmarks.py --json Benchmarks/Results/python_results.json
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
       - name: Compare results & check for regressions
-        id: compare
         run: |
-          # Only CI_GATE benches (Forecast + Pearson + Decomposition + Trees) can fail the job.
-          python3 Benchmarks/Python/compare.py \
-            Benchmarks/Results/swift_results.json \
-            Benchmarks/Results/python_results.json \
-            --regression-threshold 1.2
+          python3 Benchmarks/Python/compare.py Benchmarks/Results/swift_results.json Benchmarks/Results/python_results.json --regression-threshold 1.2
         working-directory: ${{ env.SWIFT_PACKAGE_DIR }}
 
       - name: Upload benchmark results as artifact
         uses: actions/upload-artifact@v4
-        if: always()              # upload even on failure so we can inspect results
+        if: always()
         with:
           name: benchmark-results-${{ github.run_id }}
           path: ${{ env.SWIFT_PACKAGE_DIR }}/Benchmarks/Results/
