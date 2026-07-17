@@ -1,5 +1,5 @@
 {
-  "originHash" : "eb3aa3fb579a12b84ea6106da60b2d61fdecdc3d699b015d8e4651a1fd8baef5",
+  "originHash" : "872e9696739ba625b65bcec51274a858cf5df6c97dfe2fc9a5219a1bf65e73bd",
   "pins" : [
     {
       "identity" : "arrow-swift",
@@ -24,17 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ml-explore/mlx-swift.git",
       "state" : {
-        "revision" : "0bb916c67f4b9e5c682cbe02a42c701c93ab5021",
-        "version" : "0.31.6"
-      }
-    },
-    {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser",
-      "state" : {
-        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
-        "version" : "1.8.2"
+        "revision" : "dc43e62d7055353c7f99fa071a4e71d29dfddc44",
+        "version" : "0.31.4"
       }
     },
     {

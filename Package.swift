@@ -3,7 +3,6 @@
 import PackageDescription
 
 let globalSwiftSettings: [SwiftSetting] = [
-    .enableUpcomingFeature("StrictConcurrency"),
     .enableUpcomingFeature("ExistentialAny"),
     .define("ACCELERATE_NEW_LAPACK"),
     .define("ACCELERATE_LAPACK_ILP64"),
@@ -37,7 +36,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/ml-explore/mlx-swift.git",
-            from: "0.31.4"
+            exact: "0.31.4"
         ),
     ],
     targets: [
@@ -121,7 +120,6 @@ let package = Package(
             swiftSettings: [
                 .define("ACCELERATE_NEW_LAPACK"),
                 .unsafeFlags(["-Xcc", "-DACCELERATE_NEW_LAPACK"]),
-                .enableUpcomingFeature("StrictConcurrency"),
                 .enableUpcomingFeature("ExistentialAny")
             ],
             linkerSettings: [
