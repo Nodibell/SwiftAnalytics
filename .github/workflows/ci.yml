@@ -47,6 +47,22 @@ jobs:
           path: .build
           key: ${{ runner.os }}-spm-v2-${{ hashFiles('**/Package.resolved') }}
       
+      - name: Prepare Metal resources for CLI testing
+        run: |
+          swift build --build-tests
+          METALLIB_PATH=$(find .build -name "default.metallib" -print -quit)
+          if [ -n "$METALLIB_PATH" ]; then
+            echo "Found default.metallib at $METALLIB_PATH"
+            cp "$METALLIB_PATH" ./default.metallib
+            cp "$METALLIB_PATH" ./mlx.metallib
+            BUILD_DIR=$(swift build --show-bin-path -c debug)
+            mkdir -p "$BUILD_DIR"
+            cp "$METALLIB_PATH" "$BUILD_DIR/default.metallib"
+            cp "$METALLIB_PATH" "$BUILD_DIR/mlx.metallib"
+          else
+            echo "Warning: default.metallib not found"
+          fi
+
       - name: Run tests
         env:
           MLX_DEVICE: cpu
@@ -91,6 +107,18 @@ jobs:
           METAL_DEVICE_WRAPPER_TYPE: cpu
         run: |
           swift build -c release --product SwiftAnalyticsBenchmarks
+          METALLIB_PATH=$(find .build -name "default.metallib" -print -quit)
+          if [ -n "$METALLIB_PATH" ]; then
+            echo "Found default.metallib at $METALLIB_PATH"
+            cp "$METALLIB_PATH" ./default.metallib
+            cp "$METALLIB_PATH" ./mlx.metallib
+            BUILD_DIR=$(swift build -c release --show-bin-path)
+            mkdir -p "$BUILD_DIR"
+            cp "$METALLIB_PATH" "$BUILD_DIR/default.metallib"
+            cp "$METALLIB_PATH" "$BUILD_DIR/mlx.metallib"
+          else
+            echo "Warning: default.metallib not found"
+          fi
           mkdir -p Benchmarks/Results
           swift run -c release SwiftAnalyticsBenchmarks --json Benchmarks/Results/swift_results.json
           python3 Benchmarks/Python/benchmarks.py --json Benchmarks/Results/python_results.json
