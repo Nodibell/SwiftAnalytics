@@ -12,7 +12,7 @@ let globalSwiftSettings: [SwiftSetting] = [
 let package = Package(
     name: "SwiftAnalytics",
     platforms: [
-        .macOS(.v15),
+        .macOS(.v14),
         .iOS(.v18),
         .visionOS(.v2),
     ],
