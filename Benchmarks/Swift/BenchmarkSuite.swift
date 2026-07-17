@@ -7,7 +7,7 @@ import Foundation
 // MARK: – Result types
 
 /// One benchmark scenario result.
-public struct BenchmarkResult: Codable {
+public struct BenchmarkResult: Codable, Sendable {
     public let name: String
     public let module: String
     public let iterations: Int
