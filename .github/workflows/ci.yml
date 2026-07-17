@@ -45,9 +45,15 @@ jobs:
         with:
           path: .build
           key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+      
       - name: Run tests
+        env:
+          MLX_DEVICE: cpu
+          MLX_METAL_DISABLE: "1"
+          METAL_DEVICE_WRAPPER_TYPE: cpu
         run: swift test --enable-code-coverage -v --skip SwiftLLMTests
-      - name: Upload coverage
+        
+      - name: Export coverage
         run: |
           BUILD_DIR=$(swift build --show-bin-path -c debug)
           PROFDATA=".build/debug/codecov/default.profdata"
@@ -76,6 +82,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r Benchmarks/Python/requirements.txt
       - name: Run Benchmarks
+        env:
+          MLX_DEVICE: cpu
+          MLX_METAL_DISABLE: "1"
         run: |
           swift build -c release --product SwiftAnalyticsBenchmarks
           mkdir -p Benchmarks/Results
