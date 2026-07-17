@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SwiftAnalytics — High-performance modular data science and GenAI framework for Apple Silicon.">
+    <title>SwiftAnalytics — Engineering Documentation & Guide</title>
+    <!-- Outfit & JetBrains Mono Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #09090b;
+            --bg-card: rgba(22, 22, 29, 0.6);
+            --bg-card-hover: rgba(30, 30, 39, 0.85);
+            --border-glow: rgba(99, 102, 241, 0.15);
+            --border-translucent: rgba(255, 255, 255, 0.08);
+            
+            --accent-primary: #6366f1; /* Indigo */
+            --accent-primary-rgb: 99, 102, 241;
+            --accent-secondary: #a855f7; /* Purple */
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --text-highlight: #ffffff;
+            
+            --winner-green: #10b981;
+            --loser-red: #ef4444;
+            --sidebar-width: 280px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            display: flex;
+        }
+
+        /* Ambient Glow Orbs */
+        .glow-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.22;
+            pointer-events: none;
+        }
+        .orb-1 {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-primary);
+            top: -100px;
+            right: -100px;
+        }
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: var(--accent-secondary);
+            bottom: -200px;
+            left: -200px;
+        }
+
+        /* Sidebar Navigation */
+        aside {
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            width: var(--sidebar-width);
+            background: rgba(10, 10, 14, 0.95);
+            border-right: 1px solid var(--border-translucent);
+            backdrop-filter: blur(20px);
+            padding: 2.5rem 1.5rem;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            overflow-y: auto;
+        }
+
+        .logo-area {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .logo-area h1 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-area span {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+        }
+
+        .nav-links {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            list-style: none;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.25s ease;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            color: var(--text-highlight);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: inset 1px 1px 0px var(--border-translucent);
+        }
+
+        .nav-item.active {
+            border-left: 3px solid var(--accent-primary);
+            background: rgba(99, 102, 241, 0.08);
+        }
+
+        /* Main Content Panel */
+        main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 4rem 3rem;
+            max-width: 1200px;
+            margin-right: auto;
+        }
+
+        /* Hero / Introduction */
+        .hero {
+            margin-bottom: 4rem;
+        }
+
+        .hero h2 {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 1.5rem;
+            line-height: 1.15;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin-bottom: 2rem;
+        }
+
+        .badge-container {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-translucent);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .badge.accent {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--accent-primary);
+            color: #c7d2fe;
+        }
+
+        /* Card Section Layout */
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-translucent);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 4rem;
+        }
+
+        /* Glassmorphism Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-translucent);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            background: var(--bg-card-hover);
+            border-color: var(--border-glow);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4), 0 0 1px 1px var(--border-glow);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+
+        .card h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text-highlight);
+        }
+
+        .card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+        }
+
+        /* Benchmark Section */
+        .benchmark-table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-translucent);
+            border-radius: 16px;
+            padding: 2rem;
+            backdrop-filter: blur(16px);
+            margin-bottom: 4rem;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            padding: 1rem;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-translucent);
+        }
+
+        td {
+            padding: 1.25rem 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.95rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .speedup-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-weight: 700;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .speedup-badge.winner {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--winner-green);
+        }
+
+        .speedup-badge.loser {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--loser-red);
+        }
+
+        /* Code Blocks */
+        pre {
+            background: #0f0f13;
+            border: 1px solid var(--border-translucent);
+            border-radius: 12px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            position: relative;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #a5b4fc;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-translucent);
+            color: var(--text-muted);
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            color: var(--text-highlight);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Interactive Tabs */
+        .tabs-header {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-translucent);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            color: var(--text-highlight);
+        }
+
+        .tab-btn.active {
+            color: var(--text-highlight);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-gradient);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsive Layout adjustments */
+        @media (max-width: 900px) {
+            aside {
+                display: none;
+            }
+            main {
+                margin-left: 0;
+                padding: 2rem 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="glow-orb orb-1"></div>
+    <div class="glow-orb orb-2"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside>
+        <div class="logo-area">
+            <h1>SwiftAnalytics</h1>
+            <span>v1.0.0 Stable</span>
+        </div>
+        <ul class="nav-links">
+            <li><a href="#hero" class="nav-item active" onclick="showSection('hero')">📌 Overview</a></li>
+            <li><a href="#benchmarks" class="nav-item" onclick="showSection('benchmarks')">📊 Benchmarks</a></li>
+            <li><a href="#architecture" class="nav-item" onclick="showSection('architecture')">🛠 Architecture</a></li>
+            <li><a href="#quickstart" class="nav-item" onclick="showSection('quickstart')">💻 Quick Start</a></li>
+            <li><a href="#modules" class="nav-item" onclick="showSection('modules')">🚀 Modules</a></li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Panel -->
+    <main>
+        <!-- Hero Section -->
+        <section id="hero" class="hero">
+            <h2>High-Performance Modular Data Science for Apple Silicon</h2>
+            <p>
+                SwiftAnalytics is a native, high-performance data analysis, modeling, and machine learning framework. 
+                Engineered for Apple Silicon Unified Memory Architecture (UMA) and compliant with Swift 6 Strict Concurrency.
+            </p>
+            <div class="badge-container">
+                <div class="badge accent">🚀 macOS 15+ & iOS 18+</div>
+                <div class="badge">🔒 Swift 6 strict concurrency ready</div>
+                <div class="badge">🔥 Metal-GPU & Accelerate-CPU</div>
+            </div>
+        </section>
+
+        <!-- Benchmark Section -->
+        <section id="benchmarks">
+            <h2 class="section-title">📊 Median Execution Performance</h2>
+            <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
+                Below are comparative benchmarks run on <b>Apple Silicon (M-series, arm64)</b> comparing Swift vDSP/MLX implementations against Python libraries (NumPy, Scikit-Learn, Statsmodels, PyTorch).
+            </p>
+            <div class="benchmark-table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Benchmark Test</th>
+                            <th>Swift (ms)</th>
+                            <th>Python (ms)</th>
+                            <th>Speedup</th>
+                            <th>Winner</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>Pearson Correlation</b> (500k elements)</td>
+                            <td>0.777 ms</td>
+                            <td>1.220 ms</td>
+                            <td><span class="speedup-badge winner">1.57x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>Random Forest Fit</b> (1k x 4 features, 50 trees)</td>
+                            <td>4.630 ms</td>
+                            <td>23.626 ms</td>
+                            <td><span class="speedup-badge winner">5.10x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>Holt-Winters Fit</b> (50k points, period=12)</td>
+                            <td>6.349 ms</td>
+                            <td>135.124 ms</td>
+                            <td><span class="speedup-badge winner">21.28x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>ARIMA Fit</b> (50k points)</td>
+                            <td>2.297 ms</td>
+                            <td>204.394 ms</td>
+                            <td><span class="speedup-badge winner">89.00x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>Kalman Filter 1D</b> (10k observations)</td>
+                            <td>44.709 ms</td>
+                            <td>81.172 ms</td>
+                            <td><span class="speedup-badge winner">1.82x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>KernelSHAP Explain</b> (5 features, 100 coalitions)</td>
+                            <td>0.172 ms</td>
+                            <td>0.464 ms</td>
+                            <td><span class="speedup-badge winner">2.69x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>RingLWE Encrypt/Decrypt</b> (vector size=64)</td>
+                            <td>0.020 ms</td>
+                            <td>0.286 ms</td>
+                            <td><span class="speedup-badge winner">14.28x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>PNNS Classify</b> (50 DB vectors, size=64)</td>
+                            <td>0.231 ms</td>
+                            <td>2.903 ms</td>
+                            <td><span class="speedup-badge winner">12.54x</span></td>
+                            <td>🟢 Swift</td>
+                        </tr>
+                        <tr>
+                            <td><b>LLM Generate</b> (10 tokens streaming)</td>
+                            <td>4.924 ms</td>
+                            <td>3.656 ms</td>
+                            <td><span class="speedup-badge loser">0.74x</span></td>
+                            <td>🔴 Python</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Architecture section -->
+        <section id="architecture" style="margin-bottom: 4rem;">
+            <h2 class="section-title">🛠 Architectural Optimizations</h2>
+            <div class="grid">
+                <div class="card">
+                    <span class="card-icon">⚡️</span>
+                    <h3>OOP to Data-Oriented Design</h3>
+                    <p>
+                        Tree ensembles (Random Forests, GBDTs) transition from pointer-linked class instances to contiguous arrays of <code>FlatTreeNode</code> structures. This eliminates ARC overhead and increases CPU cache localization.
+                    </p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🧠</span>
+                    <h3>Intelligent Hardware Routing</h3>
+                    <p>
+                        Algorithmic branches (e.g. Decision Trees, DBSCAN) route automatically to high-IPC CPU threads, while heavy matrix mathematics route to MLX GPU-accelerated pipelines.
+                    </p>
+                </div>
+                <div class="card">
+                    <span class="card-icon">🚀</span>
+                    <h3>NaN Verification Bypass</h3>
+                    <p>
+                        An optional parameter <code>checkNaN: Bool = false</code> is provided in Stats functions to skip O(N) CPU check loops, allowing the raw hardware vector SIMD (vDSP) to run at peak capacity.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Start section -->
+        <section id="quickstart" style="margin-bottom: 4rem;">
+            <h2 class="section-title">💻 Installation & Quick Start</h2>
+            <div class="tabs-header">
+                <button class="tab-btn active" onclick="switchTab('quick-swift')">Swift Package</button>
+                <button class="tab-btn" onclick="switchTab('quick-code')">Example Usage</button>
+            </div>
+            
+            <div id="quick-swift" class="tab-pane active">
+                <p>Add <b>SwiftAnalytics</b> to your <code>Package.swift</code> dependencies:</p>
+                <pre><button class="copy-btn" onclick="copyCode('spm-code')">Copy</button><code id="spm-code">dependencies: [
+    .package(url: "https://github.com/Nodibell/SwiftAnalytics.git", from: "1.0.0")
+]</code></pre>
+            </div>
+
+            <div id="quick-code" class="tab-pane">
+                <p>Fit a GPU-accelerated Linear Regression estimator directly on a dataset:</p>
+                <pre><button class="copy-btn" onclick="copyCode('usage-code')">Copy</button><code id="usage-code">import SwiftDataFrame
+import SwiftStats
+import SwiftML
+
+// 1. Read CSV DataFrame
+let df = try DataFrame.readCSV(contentsOf: csvURL)
+
+// 2. Perform descriptive statistics (skip NaN check for speed)
+let summary = try Stats.describe(df["target"].toDoubles()!, checkNaN: false)
+print(summary)
+
+// 3. Train ML model on the GPU
+let regressor = LinearRegression(device: .gpu)
+try await regressor.fit(features: X, targets: y)
+let predictions = try await regressor.predict(features: X_test)</code></pre>
+            </div>
+        </section>
+
+        <!-- Modules Section -->
+        <section id="modules" style="margin-bottom: 4rem;">
+            <h2 class="section-title">🚀 Core Modules Details</h2>
+            <div class="grid">
+                <div class="card">
+                    <h3>SwiftDataFrame</h3>
+                    <p>High-performance columnar data manipulation with zero-copy mappings built on Apache Arrow.</p>
+                </div>
+                <div class="card">
+                    <h3>SwiftStats</h3>
+                    <p>Vectorized descriptive statistics, correlations, and hypothesis tests using Accelerate vDSP/LAPACK.</p>
+                </div>
+                <div class="card">
+                    <h3>SwiftPreprocessing</h3>
+                    <p>Pipelines for feature scaling, ordinal encoding, robust normalization, and missing value indicators.</p>
+                </div>
+                <div class="card">
+                    <h3>SwiftML</h3>
+                    <p>DOD-based Decision Trees, Random Forests, GBDTs, and SGD-based linear models on MLX.</p>
+                </div>
+                <div class="card">
+                    <h3>SwiftLLM</h3>
+                    <p>GPU causal Transformer-decoders and Sampler interfaces powered by MLX for local AI inference.</p>
+                </div>
+                <div class="card">
+                    <h3>SwiftPrivacy</h3>
+                    <p>Homomorphic Encryption schemes (Ring-LWE, PNNS) for private nearest-neighbor classification.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function showSection(id) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
