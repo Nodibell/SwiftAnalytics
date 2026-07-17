@@ -19,7 +19,7 @@ jobs:
   # ── Job 1: Build + Unit Tests ───────────────────────────────────────────────
   build-and-test:
     name: Build & Test (macOS / Apple Silicon)
-    runs-on: macos-14          # Apple Silicon M1 – required for Accelerate & Metal
+    runs-on: macos-latest          # Apple Silicon M1 – required for Accelerate & Metal
 
     steps:
       - name: Checkout repository
@@ -83,7 +83,7 @@ jobs:
   # ── Job 2: Performance Benchmarks ─────────────────────────────────────────
   performance-check:
     name: Performance Regression Check
-    runs-on: macos-14
+    runs-on: macos-latest
     needs: build-and-test          # only run if tests pass
 
     steps:
