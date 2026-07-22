@@ -519,39 +519,39 @@
             </div>
         </section>
 
-        <!-- What's New in v1.2 Section -->
+        <!-- What's New in v1.3 Section -->
         <section id="whats-new" style="margin-bottom: 4rem;">
-            <h2 class="section-title">🔥 What's New in v1.2</h2>
+            <h2 class="section-title">🔥 What's New in v1.3</h2>
             <p style="margin-bottom: 1.5rem; color: var(--text-muted);">
-                Version 1.2 introduces the main package rename to SwiftSci, Joseph form numerical stabilization for Kalman filtering, byte-level BPE tokenization, and safe DataFrame cast enhancements.
+                Version 1.3 introduces Phase 1 of the Sklearn Parity Roadmap: Estimator pipelines, ColumnTransformer subset routing, RandomizedSearchCV parameter tuning, 2D class probabilities, and extended classification & ROC metrics.
             </p>
             <div class="grid">
                 <div class="card">
-                    <span class="card-icon">🏷️</span>
-                    <h3>SwiftSci Package Branding</h3>
+                    <span class="card-icon">🔗</span>
+                    <h3>Estimator Pipelines</h3>
                     <p>
-                        Renamed main Swift Package to <code>SwiftSci</code> for clean ecosystem branding while preserving target module names (<code>SwiftDataFrame</code>, <code>SwiftStats</code>, <code>SwiftML</code>, <code>SwiftForecast</code>, etc.).
+                        Chains zero or more preprocessing transformers (e.g. <code>StandardScaler</code>, <code>MinMaxScaler</code>) directly into <code>ClassificationPipeline</code> or <code>RegressionPipeline</code> for leak-free model fitting.
                     </p>
                 </div>
                 <div class="card">
-                    <span class="card-icon">📐</span>
-                    <h3>Joseph Form Kalman Filter</h3>
+                    <span class="card-icon">🔀</span>
+                    <h3>ColumnTransformer Routing</h3>
                     <p>
-                        Updated covariance matrix updates in <code>filter()</code> and <code>smooth()</code> to the Joseph form <code>P = (I - KH) P_pred (I - KH)ᵀ + K R Kᵀ</code>, preventing symmetry and positive-definiteness loss.
+                        Applies separate preprocessing pipelines to independent subsets of DataFrame column indices via <code>ColumnTransformer</code> and concatenates transformed outputs.
                     </p>
                 </div>
                 <div class="card">
-                    <span class="card-icon">🔤</span>
-                    <h3>UTF-8 Byte BPE Tokenizer</h3>
+                    <span class="card-icon">🎲</span>
+                    <h3>RandomizedSearchCV</h3>
                     <p>
-                        Refactored <code>BPETokenizer</code> to split words on UTF-8 bytes mapped via GPT-2 byte-to-unicode character encoding, fixing subword tokenization for non-ASCII text.
+                        Parallel randomized hyperparameter search across parameter distributions integrated with <code>KFold</code> cross-validation in <code>SwiftOptimize</code>.
                     </p>
                 </div>
                 <div class="card">
-                    <span class="card-icon">📊</span>
-                    <h3>DataFrame Row Closure & Safe Cast</h3>
+                    <span class="card-icon">📈</span>
+                    <h3>Class Probabilities & Extended Metrics</h3>
                     <p>
-                        Added per-row closure builder <code>addColumn(_:as:using:)</code>, fast-path type casting, and <code>DataFrameError.partialCastFailure</code> protection against silent data loss.
+                        Added <code>predictProbability</code> requirement to <code>ClassifierEstimator</code> alongside <code>balancedAccuracy</code>, <code>MCC</code>, <code>cohenKappa</code>, <code>logLoss</code>, <code>brierScore</code>, <code>rocCurve</code>, <code>rocAUC</code>, and <code>prCurve</code>.
                     </p>
                 </div>
             </div>
@@ -566,11 +566,25 @@
 
             <div class="changelog-timeline" style="display: flex; flex-direction: column; gap: 1.5rem;">
                 
-                <!-- Release v1.2.0 -->
+                <!-- Release v1.3.0 -->
                 <div class="card" style="border-left: 4px solid var(--accent-primary);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                        <h3 style="font-size: 1.3rem; color: var(--text-highlight);">v1.3.0 — Sklearn Parity Phase 1</h3>
+                        <span class="badge accent">July 2026 · Latest Release</span>
+                    </div>
+                    <ul style="padding-left: 1.25rem; color: var(--text-muted); line-height: 1.8;">
+                        <li><b>🔗 Estimator Pipelines</b>: Introduced <code>ClassificationPipeline</code> and <code>RegressionPipeline</code> for seamless preprocessing-to-estimator chaining without data leakage.</li>
+                        <li><b>🔀 ColumnTransformer</b>: Introduced <code>ColumnTransformer</code> in <code>SwiftPreprocessing</code> for routing specific column subsets to separate transformers.</li>
+                        <li><b>🎲 RandomizedSearchCV</b>: Added <code>RandomizedSearchCV</code> in <code>SwiftOptimize</code> for randomized hyperparameter tuning with <code>KFold</code> cross-validation.</li>
+                        <li><b>📈 Class Probabilities & Extended Metrics</b>: Added 2D matrix class probability interface <code>predictProbability</code> to <code>ClassifierEstimator</code> protocol, and implemented <code>balancedAccuracy</code>, <code>matthewsCorrelationCoefficient</code> (MCC), <code>cohenKappa</code>, <code>logLoss</code>, <code>brierScore</code>, <code>rocCurve</code>, <code>rocAUC</code>, and <code>prCurve</code> in <code>Metrics.swift</code>.</li>
+                    </ul>
+                </div>
+
+                <!-- Release v1.2.0 -->
+                <div class="card" style="border-left: 4px solid var(--accent-secondary);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
                         <h3 style="font-size: 1.3rem; color: var(--text-highlight);">v1.2.0 — SwiftSci Rename & Stabilization</h3>
-                        <span class="badge accent">July 2026 · Latest Stable Release</span>
+                        <span class="badge">July 2026</span>
                     </div>
                     <ul style="padding-left: 1.25rem; color: var(--text-muted); line-height: 1.8;">
                         <li><b>🏷️ Package Rename</b>: Renamed main Swift Package to <code>SwiftSci</code> for ecosystem clarity while preserving target modules (<code>SwiftDataFrame</code>, <code>SwiftStats</code>, <code>SwiftML</code>, <code>SwiftForecast</code>, <code>SwiftNLP</code>, <code>SwiftExplain</code>, <code>SwiftCluster</code>, <code>SwiftOptimize</code>).</li>
