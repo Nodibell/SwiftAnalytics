@@ -1,6 +1,6 @@
-# SwiftAnalytics
+# SwiftSci
 
-**SwiftAnalytics** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
+**SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
 The package combines hardware-accelerated tensor computations on the Apple Silicon GPU via **MLX** with highly optimized CPU vector routines from the **Accelerate framework (vDSP / LAPACK)**.
 
@@ -58,7 +58,7 @@ The following table presents median execution times on an **Apple Silicon M-seri
 
 ### 1. Transitioning from OOP to Data-Oriented Design (DOD)
 Traditional object-oriented trees (where every node is a reference type containing child node pointers) suffer from severe Automatic Reference Counting (ARC) overhead and poor CPU cache locality (L1/L2 cache misses). 
-`SwiftAnalytics` resolves this by storing trees as a contiguous flat array of `FlatTreeNode` structures:
+`SwiftSci` resolves this by storing trees as a contiguous flat array of `FlatTreeNode` structures:
 * Nodes are allocated next to each other in memory.
 * Child navigation is done via array offsets.
 * This dramatically increases tree ensemble traversal speeds.

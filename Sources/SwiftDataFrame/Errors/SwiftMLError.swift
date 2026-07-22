@@ -1,6 +1,6 @@
 import Foundation
 
-/// A unified, consolidated error type for all modules in the SwiftAnalytics ecosystem.
+/// A unified, consolidated error type for all modules in the SwiftSci ecosystem.
 public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStringConvertible {
     
     // MARK: - Validation & Input Errors (Global & Preprocessing)
@@ -74,7 +74,7 @@ public enum SwiftMLError: Error, LocalizedError, Sendable, Equatable, CustomStri
     public static var notFitted: SwiftMLError { .modelNotFitted }
     
     public var description: String {
-        return errorDescription ?? "Unknown SwiftAnalytics error."
+        return errorDescription ?? "Unknown SwiftSci error."
     }
     
     public var errorDescription: String? {
