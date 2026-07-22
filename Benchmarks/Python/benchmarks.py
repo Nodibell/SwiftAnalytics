@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SwiftAnalytics Python Benchmark Suite — v1.0
+SwiftSci Python Benchmark Suite — v1.3
 Mirrors the Swift benchmarks in Benchmarks/Swift/ for direct comparison.
 
 Usage:

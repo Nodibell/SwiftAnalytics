@@ -210,9 +210,44 @@ private func sortIndices<C: Comparable>(_ indices: inout [Int], ascending: Bool,
     }
 }
 
-// MARK: – Double column filter fast path
+import Foundation
+import Accelerate
+
+// MARK: – Double column filter & vDSP vectorised reductions fast path
 
 extension TypedColumn where T == Double {
+    /// Computes sample mean using Accelerate vDSP.
+    public func mean() -> Double {
+        let nonNulls = nonNullValues
+        guard !nonNulls.isEmpty else { return 0.0 }
+        var result = 0.0
+        vDSP_meanvD(nonNulls, 1, &result, vDSP_Length(nonNulls.count))
+        return result
+    }
+
+    /// Computes sample variance using two-pass vDSP operations with Bessel's correction.
+    public func variance() -> Double {
+        let nonNulls = nonNullValues
+        let count = nonNulls.count
+        guard count > 1 else { return 0.0 }
+        let length = vDSP_Length(count)
+
+        var meanVal = 0.0
+        var meanSquareVal = 0.0
+
+        vDSP_meanvD(nonNulls, 1, &meanVal, length)
+        vDSP_measqvD(nonNulls, 1, &meanSquareVal, length)
+
+        let popVariance = meanSquareVal - (meanVal * meanVal)
+        let besselCorrection = Double(count) / Double(count - 1)
+        return max(0.0, popVariance * besselCorrection)
+    }
+
+    /// Computes sample standard deviation using Accelerate vDSP.
+    public func stdDev() -> Double {
+        sqrt(variance())
+    }
+
     /// Builds a row mask for common numeric `FilterCondition`s without type erasure.
     /// Returns `nil` when the condition is not a numeric comparison handled here.
     func mask(matching condition: FilterCondition) -> [Bool]? {

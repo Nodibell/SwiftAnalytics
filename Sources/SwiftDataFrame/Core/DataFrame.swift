@@ -191,6 +191,20 @@ public struct DataFrame: Sendable {
 
     // MARK: – Filtering
 
+    /// Filters rows using a predicate closure over raw row index (zero allocation).
+    public func filterRows(by predicate: (Int) -> Bool) -> DataFrame {
+        let rows = shape.rows
+        guard rows > 0 else { return DataFrame.empty }
+        var passingIndices = [Int]()
+        passingIndices.reserveCapacity(rows)
+        for i in 0..<rows {
+            if predicate(i) {
+                passingIndices.append(i)
+            }
+        }
+        return gathered(at: passingIndices)
+    }
+
     /// Filters rows using a predicate closure.
     ///
     /// The row view resolves column values lazily, so predicates that only

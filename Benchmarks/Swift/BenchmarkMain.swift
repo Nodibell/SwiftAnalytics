@@ -46,7 +46,7 @@ struct BenchmarkEntryPoint {
         let args = BenchmarkArgs.parse()
 
         print("╔════════════════════════════════════════════════════╗")
-        print("║        SwiftSci Benchmark Suite — v1.0             ║")
+        print("║        SwiftSci Benchmark Suite — v1.3             ║")
         print("╚════════════════════════════════════════════════════╝")
         print("Platform : \(platformString())")
         print("Swift    : \(swiftVersion())")
