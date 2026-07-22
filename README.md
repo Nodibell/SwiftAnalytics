@@ -99,5 +99,14 @@ let predictions = try await regressor.predict(features: X_test)
 
 ---
 
+## 🗺 Roadmap & Future Plans
+
+For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftAnalytics/ROADMAP/ROADMAP.md) directory:
+* **v1.1 (Completed 🟢)**: Streaming CSV Parser, SafeTensors & GGUF model loader, SARIMA & GARCH models.
+* **v1.2 (Planned 📋)**: Package renaming (`SwiftSci`), Kalman filter Joseph form fix, byte-level BPE, `addColumn`.
+* **v1.3 (Planned 📋)**: Sklearn parity (`ClassificationPipeline`/`RegressionPipeline`, `ColumnTransformer`, `RandomizedSearchCV`, extended metrics, outlier detection).
+
+---
+
 ## 📜 License
 This project is licensed under the MIT License.
