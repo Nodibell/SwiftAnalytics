@@ -1,4 +1,5 @@
 import Foundation
+import SwiftPreprocessing
 
 /// Synthetic dataset generation utilities for testing and benchmarking machine learning estimators.
 public enum DatasetUtilities {

@@ -83,6 +83,7 @@ let package = Package(
             name: "SwiftPreprocessing",
             dependencies: [
                 "SwiftDataFrame",
+                "SwiftStats",
                 .product(name: "MLX", package: "mlx-swift"),
             ],
             path: "Sources/SwiftPreprocessing",

@@ -10,7 +10,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     public let maxDepth: Int
     public let minSamplesSplit: Int
     
-    // Ліс тепер зберігається як масив плоских дерев
+    // Forest stored as an array of flat tree node arrays (Data-Oriented Design)
     private var trees: [[FlatTreeNode]] = []
     private var initialPrediction: Double = 0.0
     
@@ -20,8 +20,8 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
         maxDepth: Int = 3,
         minSamplesSplit: Int = 2
     ) throws {
-        // guard nEstimators > 0 else { throw MLError.invalidParameter("nEstimators must be > 0") }
-        // guard learningRate > 0 else { throw MLError.invalidParameter("learningRate must be > 0") }
+        guard nEstimators > 0 else { throw MLError.invalidParameter("nEstimators must be > 0") }
+        guard learningRate > 0 else { throw MLError.invalidParameter("learningRate must be > 0") }
         self.nEstimators = nEstimators
         self.learningRate = learningRate
         self.maxDepth = maxDepth
@@ -29,7 +29,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     }
     
     /// Fits the GBDT model on the provided features and targets.
-    public func fit(features: [[Double]], targets: [Double]) throws {
+    public func fit(features: [[Double]], targets: [Double]) async throws {
         guard !features.isEmpty else { throw MLError.emptyInput }
         guard features.count == targets.count else {
             throw MLError.dimensionMismatch(expected: features.count, got: targets.count)
@@ -68,7 +68,7 @@ public actor GradientBoostedTreesRegressor: RegressorEstimator {
     }
     
     /// Returns predictions for the given feature matrix.
-    public func predict(features: [[Double]]) throws -> [Double] {
+    public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         
         let lr = learningRate

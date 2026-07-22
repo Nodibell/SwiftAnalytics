@@ -41,6 +41,7 @@ public final class SMOTE: Sendable {
         
         var syntheticFeatures = features
         var syntheticTargets = targets
+        var rng = SeededRandom(seed: Int(self.seed))
         
         for (cls, indices) in classIndices {
             let count = indices.count
@@ -52,7 +53,7 @@ public final class SMOTE: Sendable {
             let classFeatures = indices.map { features[$0] }
             
             for _ in 0..<samplesToGenerate {
-                let idx = Int.random(in: 0..<count)
+                let idx = rng.nextInt(upperBound: count)
                 let baseSample = classFeatures[idx]
                 
                 // Find k-nearest neighbors within minority class
@@ -67,11 +68,11 @@ public final class SMOTE: Sendable {
                 }
                 
                 distances.sort { $0.dist < $1.dist }
-                let neighborIdx = distances[Int.random(in: 0..<k)].index
+                let neighborIdx = distances[rng.nextInt(upperBound: k)].index
                 let neighborSample = classFeatures[neighborIdx]
                 
-                // Interpolate along line segment
-                let gap = Double.random(in: 0.0...1.0)
+                // Interpolate along line segment using seeded random gap
+                let gap = rng.nextDouble()
                 var newSample = [Double](repeating: 0.0, count: numFeatures)
                 for f in 0..<numFeatures {
                     newSample[f] = baseSample[f] + gap * (neighborSample[f] - baseSample[f])
@@ -108,10 +109,16 @@ public final class RandomUndersampler: Sendable {
             return ResampledDataset(features: features, targets: targets)
         }
         
+        var rng = SeededRandom(seed: Int(self.seed))
         var resampledIndices: [Int] = []
         
         for (_, indices) in classIndices {
-            let shuffled = indices.shuffled()
+            // Seeded Fisher-Yates shuffle
+            var shuffled = indices
+            for i in stride(from: shuffled.count - 1, through: 1, by: -1) {
+                let j = rng.nextInt(upperBound: i + 1)
+                shuffled.swapAt(i, j)
+            }
             resampledIndices.append(contentsOf: shuffled.prefix(minCount))
         }
         

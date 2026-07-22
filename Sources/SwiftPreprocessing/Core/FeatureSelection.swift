@@ -1,4 +1,5 @@
 import Foundation
+import SwiftStats
 
 /// Feature selector that removes all features whose variance does not meet a threshold.
 public final class VarianceThreshold: PreprocessingTransformer, @unchecked Sendable {
@@ -37,7 +38,11 @@ public final class VarianceThreshold: PreprocessingTransformer, @unchecked Senda
     }
 }
 
-/// Feature selector that retains the K highest scoring features according to ANOVA F-value / variance.
+/// Feature selector that retains the K highest scoring features.
+///
+/// When `targets` are provided to `fit(features:targets:)`, features are ranked
+/// by ANOVA F-value (supervised selection). When targets are `nil`, falls back
+/// to variance-based ranking (unsupervised).
 public final class SelectKBest: PreprocessingTransformer, @unchecked Sendable {
     public let k: Int
     private var selectedIndices: [Int] = []
@@ -60,11 +65,38 @@ public final class SelectKBest: PreprocessingTransformer, @unchecked Sendable {
         
         var scores: [(index: Int, score: Double)] = []
         
-        for f in 0..<numFeatures {
-            let col = features.map { $0[f] }
-            let mean = col.reduce(0.0, +) / numSamples
-            let variance = col.reduce(0.0) { $0 + ($1 - mean) * ($1 - mean) } / numSamples
-            scores.append((f, variance))
+        if let targets {
+            // Supervised: ANOVA F-value per feature (groups = target classes)
+            var classIndices: [Double: [Int]] = [:]
+            for (i, t) in targets.enumerated() {
+                classIndices[t, default: []].append(i)
+            }
+            
+            for f in 0..<numFeatures {
+                let groups: [[Double]] = classIndices.values.map { indices in
+                    indices.map { features[$0][f] }
+                }
+                let score: Double
+                if let result = try? Stats.oneWayANOVA(groups: groups),
+                   !result.fStatistic.isNaN, !result.fStatistic.isInfinite {
+                    score = result.fStatistic
+                } else {
+                    // Fallback to variance when ANOVA cannot be computed
+                    // (e.g. only one target class present in the dataset)
+                    let col = features.map { $0[f] }
+                    let mean = col.reduce(0.0, +) / numSamples
+                    score = col.reduce(0.0) { $0 + ($1 - mean) * ($1 - mean) } / numSamples
+                }
+                scores.append((f, score))
+            }
+        } else {
+            // Unsupervised fallback: rank by feature variance
+            for f in 0..<numFeatures {
+                let col = features.map { $0[f] }
+                let mean = col.reduce(0.0, +) / numSamples
+                let variance = col.reduce(0.0) { $0 + ($1 - mean) * ($1 - mean) } / numSamples
+                scores.append((f, variance))
+            }
         }
         
         scores.sort { $0.score > $1.score }

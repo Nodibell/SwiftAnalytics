@@ -1,7 +1,9 @@
 import Foundation
+import SwiftPreprocessing
 
 // MARK: - Bootstrap Helper
 
+// internal: not part of the public API; used by both Classifier and Regressor
 func bootstrapSample(features: [[Double]], targets: [Double], seed: Int) -> ([[Double]], [Double]) {
     let n = features.count
     var rng = SeededRandom(seed: seed)
@@ -28,7 +30,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
     public let minSamplesSplit: Int
     public let criterion: SplitCriterion
 
-    // DOD Архітектура: Ліс — це масив масивів плоских вузлів
+    // DOD Architecture: the forest is stored as an array of flat node arrays
     private var trees: [[FlatTreeNode]] = []
     private var numClasses: Int = 0
 
@@ -87,7 +89,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         self.trees = trainedTrees
     }
 
-    public func predict(features: [[Double]]) throws -> [Int] {
+    public func predict(features: [[Double]]) async throws -> [Int] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
             var votes = [Int: Int]()
@@ -99,7 +101,7 @@ public actor RandomForestClassifier: ClassifierEstimator {
         }
     }
 
-    public func predictProbability(features: [[Double]]) throws -> [[Double]] {
+    public func predictProbability(features: [[Double]]) async throws -> [[Double]] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
             var votes = [Double](repeating: 0, count: numClasses)
@@ -231,7 +233,7 @@ public actor RandomForestRegressor: RegressorEstimator {
         self.trees = trainedTrees
     }
 
-    public func predict(features: [[Double]]) throws -> [Double] {
+    public func predict(features: [[Double]]) async throws -> [Double] {
         guard !trees.isEmpty else { throw MLError.notFitted }
         return features.map { sample in
             let preds = trees.map { RandomForestRegressor.predictSample(sample, nodes: $0) }
