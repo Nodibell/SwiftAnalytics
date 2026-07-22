@@ -4,6 +4,42 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-07-22
+
+### Added
+- **`SystemsCSVParser` (`SwiftDataFrame`)**: High-performance zero-copy memory-mapped RFC 4180 DFA byte parser (`SystemsCSVParser`), speeding up CSV ingestion by ~10× on large datasets.
+- **Vectorized Byte Parsers (`SwiftDataFrame`)**: Added zero-allocation ASCII parsers (`VectorizedByteParsers`) for fast `Double`, `Int`, and string decoding from unmanaged byte buffers.
+- **vDSP Reductions (`SwiftDataFrame`)**: Accelerated `TypedColumn<Double>` `mean()`, `variance()`, and `stdDev()` using Apple Accelerate `vDSP` reductions.
+- **DataFrame Index Filtering & Argsort (`SwiftDataFrame`)**: Added `filterRows(by:)` index-based boolean mask filtering and `argsort()` column index sorting.
+- **Recursive Feature Elimination RFE (`SwiftPreprocessing`)**: Added `RecursiveFeatureElimination` (RFE) for iterative feature selection based on estimator feature importances.
+- **Feature Importances & Model Persistence (`SwiftML`)**: Added Gini `featureImportances` property to `DecisionTreeClassifier`, `DecisionTreeRegressor`, `RandomForestClassifier`, `RandomForestRegressor`, and added `Codable` serialization (`save(to:)` / `load(from:)`) across classical estimators.
+- **NLP Text Tokenizers & Feature Extraction (`SwiftNLP`)**: Added `NGramTokenizer` (word & char n-grams) and `HashingVectorizer` (MurmurHash3 memory-bounded token hashing).
+- **Time Series Windowing (`SwiftForecast`)**: Added `ExpandingWindow` feature transformer for cumulative time-series feature generation.
+- **Swift DocC Integration & Multi-Module Site**: Integrated `swift-docc-plugin` (`v1.5.0`) in `Package.swift` and deployed unified 10-module static web documentation to GitHub Pages with `.nojekyll` and route auto-redirects.
+
+### Fixed & Refactored
+- **GradientBoostedTrees Bounds Check (`SwiftML`)**: Uncommented and enforced bounds checking in `GradientBoostedTreesRegressor`.
+- **Seeded Random Number Generators (`SwiftPreprocessing`)**: Fixed deterministic seeding in `SMOTE` and `RandomUndersampler` using `LCG`.
+- **SelectKBest ANOVA Scoring (`SwiftPreprocessing`)**: Fixed ANOVA F-statistic calculation in `SelectKBest` and added explicit `SwiftStats` dependency to `SwiftPreprocessing` target.
+- **CalibratedClassifier Actor Concurrency (`SwiftML`)**: Converted `CalibratedClassifier` to `actor` to guarantee thread safety under Swift 6 strict concurrency rules.
+- **Wired Memory Scaling (`SwiftPreprocessing`)**: Dynamically scaled `WiredMemoryManager` default limits using `ProcessInfo.processInfo.activeProcessorCount`.
+- **GGUF Alignment Fix (`SwiftLLM`)**: Added `loadUnaligned` in `GGUFParser` to prevent alignment fault crashes on unaligned byte buffers.
+
+### 📊 Benchmark Performance Summary (v1.4.0 vs Python)
+| Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
+| :--- | :---: | :---: | :---: | :---: |
+| **ARIMA(1,1,1) Fit** (50k pts) | 2.228 ms | 206.414 ms | 92.66x | 🟢 Swift |
+| **ARIMA(1,1,1) Forecast** (horizon=24) | 2.297 ms | 209.709 ms | 91.28x | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) | 6.823 ms | 138.947 ms | 20.37x | 🟢 Swift |
+| **Random Forest Fit** (1k×4, 50 trees) | 4.580 ms | 24.217 ms | 5.29x | 🟢 Swift |
+| **KernelSHAP Explain** (5 feats, 100 coalitions) | 0.148 ms | 0.452 ms | 3.05x | 🟢 Swift |
+| **Kalman Filter 1D** (10k obs) | 56.508 ms | 84.692 ms | 1.50x | 🟢 Swift |
+| **Mean** (vDSP, 1M elements) | 0.083 ms | 0.119 ms | 1.44x | 🟢 Swift |
+
+* **CI Status**: **PASSED** ✅ (*0 regressions detected*).
+
+---
+
 ## [1.3.0] - 2026-07-22
 
 ### Added
