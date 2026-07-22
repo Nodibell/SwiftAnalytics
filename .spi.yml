@@ -1,0 +1,12 @@
+version: 1
+builder:
+  configs:
+    - documentation_targets:
+        - SwiftDataFrame
+        - SwiftStats
+        - SwiftML
+        - SwiftForecast
+        - SwiftNLP
+        - SwiftExplain
+        - SwiftCluster
+        - SwiftOptimize
