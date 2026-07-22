@@ -1,8 +1,37 @@
 # Changelog
 
-All notable changes to the **SwiftAnalytics** ecosystem will be documented in this file.
+All notable changes to the **SwiftSci** ecosystem will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.3.0] - 2026-07-22
+
+### Added
+- **Estimator Pipelines (`SwiftML`)**: Introduced `ClassificationPipeline` and `RegressionPipeline` for chaining preprocessing transformers (`PreprocessingTransformer`) directly into final estimators without data leakage.
+- **ColumnTransformer (`SwiftPreprocessing`)**: Introduced `ColumnTransformer` for routing independent column index subsets to separate preprocessing transformers and concatenating transformed outputs.
+- **Outlier Detection (`SwiftCluster`)**: Implemented `IsolationForest` (random partition isolation trees) and `LocalOutlierFactor` (LOF kNN density estimation) anomaly detection models.
+- **Imbalanced Learning (`SwiftPreprocessing`)**: Added `SMOTE` over-sampling technique using kNN interpolation and `RandomUndersampler` for majority class sub-sampling.
+- **RandomizedSearchCV (`SwiftOptimize`)**: Added parallel randomized hyperparameter search across parameter distributions integrated with `KFold` cross-validation.
+- **Probability Calibration (`SwiftML`)**: Added `CalibratedClassifier` applying Platt scaling logistic calibration over raw base classifier outputs.
+- **Class Probabilities & Extended Metrics (`SwiftML` & `SwiftOptimize`)**: Added 2D matrix class probability requirement `predictProbability(features:)` to `ClassifierEstimator` protocol, and added `balancedAccuracy`, `matthewsCorrelationCoefficient` (MCC), `cohenKappa`, `logLoss`, `brierScore`, `rocCurve`, `rocAUC`, and `prCurve` to `Metrics.swift`.
+- **Feature Selection & Engineering (`SwiftPreprocessing`)**: Added `VarianceThreshold`, `SelectKBest`, `InteractionFeatures`, and `DateFeatures`.
+- **Time Series Transformers (`SwiftForecast`)**: Added `LagTransformer` and `RollingWindow` for constructing lagged feature matrices and rolling window statistics.
+- **Text Vectorizer & Dataset Utilities (`SwiftNLP` & `SwiftML`)**: Added `CountVectorizer` document term frequency matrix builder, and `DatasetUtilities` (`makeClassification`, `makeRegression`, `makeMoons`).
+
+### 📊 Benchmark Performance Summary (v1.3.0 vs Python)
+| Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
+| :--- | :---: | :---: | :---: | :---: |
+| **ARIMA(1,1,1) Fit** (50k pts) | 2.280 ms | 197.800 ms | 86.75x | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) | 6.811 ms | 148.627 ms | 21.82x | 🟢 Swift |
+| **Random Forest Fit** (1k×4, 50 trees) | 4.516 ms | 25.475 ms | 5.63x | 🟢 Swift |
+| **KernelSHAP Explain** (5 feats, 100 coalitions) | 0.075 ms | 0.426 ms | 5.68x | 🟢 Swift |
+| **Pearson Correlation** (500k elements) | 0.871 ms | 1.256 ms | 1.45x | 🟢 Swift |
+| **Isolation Forest Fit** (1k×10, 100 trees) | 14.048 ms | 16.510 ms | 1.18x | 🟢 Swift |
+| **Mean** (vDSP, 1M elements) | 0.255 ms | 0.121 ms | 0.47x | 🔴 NumPy |
+
+* **CI Gate Status**: **PASSED** ✅ (*0 gated regressions detected*).
+
+---
 
 ## [1.2.0] - 2026-07-22
 
