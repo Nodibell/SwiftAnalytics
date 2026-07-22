@@ -23,10 +23,13 @@ public actor KMeans {
     /// CPU-side centroid matrix (source of truth after a CPU fit).
     private var cpuCentroids: [[Double]]?
 
+    public let seed: Int
+
     public init(
         nClusters: Int,
         maxIterations: Int = 300,
         tolerance: Double = 1e-4,
+        seed: Int = 42,
         device: ExecutionDevice = .auto
     ) throws {
         guard nClusters > 0 else {
@@ -38,6 +41,7 @@ public actor KMeans {
         self.nClusters = nClusters
         self.maxIterations = maxIterations
         self.tolerance = Float(tolerance)
+        self.seed = seed
         self.requestedDevice = device
     }
 
@@ -69,11 +73,13 @@ public actor KMeans {
         case .gpu, .ane, .auto:
             let X = MLXArray(features.flatMap { $0.map { Float($0) } })
                 .reshaped([numSamples, numFeatures])
-            let nClusts = self.nClusters
+            let initCents = kmeansPlusPlusInitCPU(features: features, nClusters: nClusters, seed: seed)
+            let initCentsArray = MLXArray(initCents.flatMap { $0.map { Float($0) } })
+                .reshaped([nClusters, numFeatures])
             let maxIters = self.maxIterations
             let tol = self.tolerance
             let cents = Device.withDefaultDevice(.gpu) {
-                Self.runFitGPU(X: X, nClusters: nClusts, maxIterations: maxIters, tolerance: Float(tol))
+                Self.runFitGPU(X: X, initialCentroids: initCentsArray, maxIterations: maxIters, tolerance: Float(tol))
             }
             self.centroids = cents
             cpuCentroids = getCentroids()
@@ -100,11 +106,26 @@ public actor KMeans {
             requestedDevice: requestedDevice == .auto ? .gpu : requestedDevice
         )
         resolvedDevice = device == .cpu ? .gpu : device  // MLXArray input → GPU path
-        let nClusts = self.nClusters
+        let flat = X.asArray(Float.self)
+        let numSamples = shape[0]
+        let numFeatures = shape[1]
+        var features = [[Double]]()
+        features.reserveCapacity(numSamples)
+        for i in 0..<numSamples {
+            var row = [Double]()
+            row.reserveCapacity(numFeatures)
+            for j in 0..<numFeatures {
+                row.append(Double(flat[i * numFeatures + j]))
+            }
+            features.append(row)
+        }
+        let initCents = kmeansPlusPlusInitCPU(features: features, nClusters: nClusters, seed: seed)
+        let initCentsArray = MLXArray(initCents.flatMap { $0.map { Float($0) } })
+            .reshaped([nClusters, numFeatures])
         let maxIters = self.maxIterations
         let tol = self.tolerance
         let cents = Device.withDefaultDevice(.gpu) {
-            Self.runFitGPU(X: X, nClusters: nClusts, maxIterations: maxIters, tolerance: Float(tol))
+            Self.runFitGPU(X: X, initialCentroids: initCentsArray, maxIterations: maxIters, tolerance: Float(tol))
         }
         self.centroids = cents
         cpuCentroids = getCentroids()
@@ -163,8 +184,9 @@ public actor KMeans {
 
     // MARK: – GPU (MLX)
 
-    private static func runFitGPU(X: MLXArray, nClusters: Int, maxIterations: Int, tolerance: Float) -> MLXArray {
-        var currentCentroids = X[0..<nClusters]
+    private static func runFitGPU(X: MLXArray, initialCentroids: MLXArray, maxIterations: Int, tolerance: Float) -> MLXArray {
+        let nClusters = initialCentroids.shape[0]
+        var currentCentroids = initialCentroids
 
         for _ in 0..<maxIterations {
             let diff = X.expandedDimensions(axes: [1]) - currentCentroids.expandedDimensions(axes: [0])
@@ -200,7 +222,7 @@ public actor KMeans {
     private func fitCPU(features: [[Double]]) throws {
         let n = features.count
         let m = features[0].count
-        var centroidsLocal = Array(features.prefix(nClusters))
+        var centroidsLocal = kmeansPlusPlusInitCPU(features: features, nClusters: nClusters, seed: seed)
 
         var labels = [Int](repeating: 0, count: n)
         let tol = Double(tolerance)
@@ -280,5 +302,52 @@ public actor KMeans {
         var dist = 0.0
         vDSP_distancesqD(a, 1, b, 1, &dist, vDSP_Length(a.count))
         return dist
+    }
+
+    /// Samples initial centroids using the KMeans++ algorithm.
+    private func kmeansPlusPlusInitCPU(features: [[Double]], nClusters: Int, seed: Int) -> [[Double]] {
+        let n = features.count
+        var rng = SeededRandom(seed: seed)
+        var sampledCentroids = [[Double]]()
+        sampledCentroids.reserveCapacity(nClusters)
+
+        // 1. Uniform random first centroid
+        let firstIdx = rng.nextInt(upperBound: n)
+        sampledCentroids.append(features[firstIdx])
+
+        // 2. Sample remaining centroids with probability proportional to D(x)^2
+        var dSquared = [Double](repeating: .infinity, count: n)
+
+        for _ in 1..<nClusters {
+            var totalDist = 0.0
+            let lastCentroid = sampledCentroids.last!
+
+            for i in 0..<n {
+                let dist = Self.distanceSquared(features[i], lastCentroid)
+                dSquared[i] = min(dSquared[i], dist)
+                totalDist += dSquared[i]
+            }
+
+            if totalDist <= 0 {
+                let fallbackIdx = rng.nextInt(upperBound: n)
+                sampledCentroids.append(features[fallbackIdx])
+                continue
+            }
+
+            let target = rng.nextDouble() * totalDist
+            var cumulative = 0.0
+            var chosenIdx = n - 1
+
+            for i in 0..<n {
+                cumulative += dSquared[i]
+                if cumulative >= target {
+                    chosenIdx = i
+                    break
+                }
+            }
+            sampledCentroids.append(features[chosenIdx])
+        }
+
+        return sampledCentroids
     }
 }
