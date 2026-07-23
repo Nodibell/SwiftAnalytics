@@ -43,6 +43,7 @@ The following table presents median execution times on an **Apple Silicon M-seri
 | **OneVsRestClassifier Fit** (5 classes) | **0.73 ms** | 3.50 ms (*Scikit-Learn*) | **4.8×** | 🟢 Swift |
 | **KernelSHAP Explain** (100 coalitions) | **0.11 ms** | 0.48 ms (*SHAP*) | **4.4×** | 🟢 Swift |
 | **TF-IDF Vectorizer** (50 docs) | **1.01 ms** | 4.20 ms (*Scikit-Learn*) | **4.1×** | 🟢 Swift |
+| **TreeSHAP Explain** (100 samples) | **0.14 ms** | 0.52 ms (*SHAP*) | **3.7×** | 🟢 Swift |
 | **Mean Reduction** (vDSP 1M) | **0.086 ms** | 0.122 ms (*NumPy*) | **1.4×** | 🟢 Swift |
 | **LLM Token Generation** (10 tokens) | **3.87 ms** | 4.28 ms (*PyTorch*) | **1.1×** | 🟢 Swift |
 
