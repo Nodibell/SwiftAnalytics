@@ -130,4 +130,19 @@ public actor TFIDFVectorizer {
         try fit(documents)
         return try transform(documents)
     }
+
+    /// Fits the vectorizer on a corpus of documents (labeled argument overload).
+    public func fit(documents: [String]) throws {
+        try fit(documents)
+    }
+
+    /// Transforms documents into a TF-IDF matrix (labeled argument overload).
+    public func transform(documents: [String]) throws -> [[Double]] {
+        try transform(documents)
+    }
+
+    /// Fits the model and transforms documents (labeled argument overload).
+    public func fitTransform(documents: [String]) throws -> [[Double]] {
+        try fitTransform(documents)
+    }
 }

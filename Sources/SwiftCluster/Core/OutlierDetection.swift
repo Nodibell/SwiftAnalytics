@@ -89,6 +89,12 @@ public final class IsolationForest: Sendable {
         
         return IsolationForest(trees: builtTrees, thresholdScore: threshold, nEstimators: nEstimators, maxSamples: maxSamples, contamination: contamination)
     }
+
+    /// Alias for fit and predict in one step.
+    public static func fitPredict(data: [[Double]], nEstimators: Int = 100, maxSamples: Int? = nil, contamination: Double = 0.1, seed: UInt64 = 42) throws -> AnomalyPrediction {
+        let model = try fit(data: data, nEstimators: nEstimators, maxSamples: maxSamples, contamination: contamination, seed: seed)
+        return try model.predict(data: data)
+    }
     
     /// Predicts anomaly labels (1: inlier, -1: outlier) and anomaly scores for new features.
     public func predict(data: [[Double]]) throws -> AnomalyPrediction {
@@ -97,6 +103,16 @@ public final class IsolationForest: Sendable {
         let scores = Self.calculateScores(trees: trees, data: data, subsampleSize: subsampleSize)
         let labels = scores.map { $0 >= thresholdScore ? -1 : 1 }
         return AnomalyPrediction(labels: labels, scores: scores)
+    }
+
+    /// Predicts anomaly labels using features label alias.
+    public func predict(features: [[Double]]) throws -> AnomalyPrediction {
+        try predict(data: features)
+    }
+
+    /// Alias for fitPredict using features label.
+    public static func fitPredict(features: [[Double]], nEstimators: Int = 100, maxSamples: Int? = nil, contamination: Double = 0.1, seed: UInt64 = 42) throws -> AnomalyPrediction {
+        try fitPredict(data: features, nEstimators: nEstimators, maxSamples: maxSamples, contamination: contamination, seed: seed)
     }
     
     private static func buildTree(data: [[Double]], currentDepth: Int, maxDepth: Int, numFeatures: Int, rng: inout SeededRandom) -> Node {
@@ -171,6 +187,11 @@ public final class LocalOutlierFactor: Sendable {
         self.contamination = max(0.0, min(0.5, contamination))
     }
     
+    /// Alias for fitPredict using features label.
+    public func fitPredict(features: [[Double]]) throws -> AnomalyPrediction {
+        try fitPredict(data: features)
+    }
+
     /// Computes Local Outlier Factors for dataset.
     public func fitPredict(data: [[Double]]) throws -> AnomalyPrediction {
         guard data.count > k else {

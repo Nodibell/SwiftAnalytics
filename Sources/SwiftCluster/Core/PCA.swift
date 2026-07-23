@@ -48,6 +48,14 @@ public actor PCA {
     
     /// Explained variance of the selected components. Shape: [nComponents]
     public private(set) var explainedVariance: [Double]?
+
+    /// Explained variance ratio of each selected component (percentage of total variance).
+    public var explainedVarianceRatio: [Double]? {
+        guard let explainedVariance = explainedVariance else { return nil }
+        let totalVar = explainedVariance.reduce(0.0, +)
+        guard totalVar > 0 else { return explainedVariance.map { _ in 0.0 } }
+        return explainedVariance.map { $0 / totalVar }
+    }
     
     /// Initializes PCA with the number of components to keep and the target device.
     public init(nComponents: Int, device: ExecutionDevice = .auto) throws {
