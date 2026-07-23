@@ -68,12 +68,13 @@ jobs:
             --skip SwiftNLPTests \
             --skip SwiftPreprocessingTests \
             --skip SwiftOptimizeTests \
-            --skip TransformerDecoderTests
+            --skip SwiftLLMTests
           # Skipped: GPU-dependent tests (MLX requires Metal; no GPU on CI runners)
-          # SwiftPreprocessingTests:  SwiftPreprocessing links MLX directly → crashes at load
-          # SwiftOptimizeTests:       SwiftOptimize → SwiftML → SwiftPreprocessing → MLX
-          # TransformerDecoderTests:  SwiftLLMTests is enabled (for ParserTests), but
-          #                           TransformerDecoder triggers MLX device init at runtime
+          # SwiftPreprocessingTests: SwiftPreprocessing links MLX directly → crashes at load
+          # SwiftOptimizeTests:      SwiftOptimize → SwiftML → SwiftPreprocessing → MLX
+          # SwiftLLMTests:           Both suites (TransformerDecoder + Parser) create MLX
+          #                          arrays at runtime; SafeTensors/GGUF parsers allocate
+          #                          MLX arrays for tensor storage → array.cpp crash
         
       - name: Export coverage
         run: |
