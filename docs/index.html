@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SwiftSci 2.0 — Native Swift Data Science & Machine Learning Ecosystem</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
   <style>
     :root {
       --bg-color: #0b0f19;
@@ -36,7 +39,7 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      background-image: 
+      background-image:
         radial-gradient(circle at 15% 15%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
         radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.12) 0%, transparent 40%);
       background-attachment: fixed;
@@ -265,23 +268,21 @@
     }
   </style>
 </head>
+
 <body>
 
   <header>
     <div class="badge">🚀 SwiftSci v2.0.0 Stable</div>
     <h1>Apple Silicon Data Science & ML</h1>
     <p class="subtitle">
-      Native, modular, high-performance data analytics framework built for Swift 6, Apple Silicon Unified Memory Architecture (UMA), Accelerate vDSP, and MLX GPU execution.
+      Native, modular, high-performance data analytics framework built for Swift 6, Apple Silicon Unified Memory
+      Architecture (UMA), Accelerate vDSP, and MLX GPU execution.
     </p>
 
     <div class="stats-bar">
       <div class="stat-item">
         <span class="stat-value">14</span>
         <span class="stat-label">Core Modules</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-value">92.8×</span>
-        <span class="stat-label">ARIMA Speedup</span>
       </div>
       <div class="stat-item">
         <span class="stat-value">Swift 6</span>
@@ -306,7 +307,8 @@
           <span class="card-tag">Data Engines</span>
         </div>
         <h3 class="card-title">SwiftDataFrame <span class="arrow">→</span></h3>
-        <p class="card-desc">Zero-copy columnar tables built on Apache Arrow. Features DataFrame.readURL HTTP streaming, hash joins, pivot/melt, and systems CSV parser.</p>
+        <p class="card-desc">Zero-copy columnar tables built on Apache Arrow. Features DataFrame.readURL HTTP streaming,
+          hash joins, pivot/melt, and systems CSV parser.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -317,7 +319,8 @@
           <span class="card-tag">Statistics</span>
         </div>
         <h3 class="card-title">SwiftStats <span class="arrow">→</span></h3>
-        <p class="card-desc">Vectorized descriptive statistics, probability distributions (Student-t, Chi-Square, F), paired t-tests, and ANOVA powered by Accelerate vDSP.</p>
+        <p class="card-desc">Vectorized descriptive statistics, probability distributions (Student-t, Chi-Square, F),
+          paired t-tests, and ANOVA powered by Accelerate vDSP.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -328,7 +331,8 @@
           <span class="card-tag">Transforms</span>
         </div>
         <h3 class="card-title">SwiftPreprocessing <span class="arrow">→</span></h3>
-        <p class="card-desc">StandardScaler, MinMaxScaler, OneHotEncoder, TargetEncoder, KNNImputer, and scikit-learn parity Pipeline & ColumnTransformer.</p>
+        <p class="card-desc">StandardScaler, MinMaxScaler, OneHotEncoder, TargetEncoder, KNNImputer, and scikit-learn
+          parity Pipeline & ColumnTransformer.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -339,7 +343,8 @@
           <span class="card-tag">Supervised ML</span>
         </div>
         <h3 class="card-title">SwiftML <span class="arrow">→</span></h3>
-        <p class="card-desc">Linear/Logistic Regression, Decision Trees, Random Forests, GBDT Regressor, OneVsRestClassifier multi-class solver, and MLPs.</p>
+        <p class="card-desc">Linear/Logistic Regression, Decision Trees, Random Forests, GBDT Regressor,
+          OneVsRestClassifier multi-class solver, and MLPs.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -350,7 +355,8 @@
           <span class="card-tag">Unsupervised ML</span>
         </div>
         <h3 class="card-title">SwiftCluster <span class="arrow">→</span></h3>
-        <p class="card-desc">SVD-based PCA dimensionality reduction, DBSCAN density clustering, IsolationForest, LocalOutlierFactor, and KMeans++.</p>
+        <p class="card-desc">SVD-based PCA dimensionality reduction, DBSCAN density clustering, IsolationForest,
+          LocalOutlierFactor, and KMeans++.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -361,7 +367,8 @@
           <span class="card-tag">AutoML & Tuning</span>
         </div>
         <h3 class="card-title">SwiftOptimize <span class="arrow">→</span></h3>
-        <p class="card-desc">Automated model selection engine (AutoML), K-Fold cross-validation, GridSearchCV, RandomizedSearchCV, and evaluation metrics.</p>
+        <p class="card-desc">Automated model selection engine (AutoML), K-Fold cross-validation, GridSearchCV,
+          RandomizedSearchCV, and evaluation metrics.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -372,7 +379,8 @@
           <span class="card-tag">Time Series</span>
         </div>
         <h3 class="card-title">SwiftForecast <span class="arrow">→</span></h3>
-        <p class="card-desc">ARIMA, SARIMA, Holt-Winters exponential smoothing, GARCH volatility, Kalman Filter 1D, and additive/multiplicative decomposition.</p>
+        <p class="card-desc">ARIMA, SARIMA, Holt-Winters exponential smoothing, GARCH volatility, Kalman Filter 1D, and
+          additive/multiplicative decomposition.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -383,7 +391,8 @@
           <span class="card-tag">Natural Language</span>
         </div>
         <h3 class="card-title">SwiftNLP <span class="arrow">→</span></h3>
-        <p class="card-desc">TextNormalizer, Ukrainian & English stopwords, BPETokenizer, NGramTokenizer, HashingVectorizer, and TFIDFVectorizer.</p>
+        <p class="card-desc">TextNormalizer, Ukrainian & English stopwords, BPETokenizer, NGramTokenizer,
+          HashingVectorizer, and TFIDFVectorizer.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -394,7 +403,8 @@
           <span class="card-tag">Explainability</span>
         </div>
         <h3 class="card-title">SwiftExplain <span class="arrow">→</span></h3>
-        <p class="card-desc">Parallel KernelSHAP, fast TreeSHAP feature attributions, PartialDependencePlot (PDP), and PermutationImportance metrics.</p>
+        <p class="card-desc">Parallel KernelSHAP, fast TreeSHAP feature attributions, PartialDependencePlot (PDP), and
+          PermutationImportance metrics.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -405,7 +415,8 @@
           <span class="card-tag">Deep Learning</span>
         </div>
         <h3 class="card-title">SwiftLLM <span class="arrow">→</span></h3>
-        <p class="card-desc">Local GPU Causal Transformer Decoder with Rotary Position Embeddings (RoPE), SwiGLU, SafeTensorsParser, and GGUF weight parser.</p>
+        <p class="card-desc">Local GPU Causal Transformer Decoder with Rotary Position Embeddings (RoPE), SwiGLU,
+          SafeTensorsParser, and GGUF weight parser.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -416,7 +427,8 @@
           <span class="card-tag">Visuals</span>
         </div>
         <h3 class="card-title">SwiftVisualization <span class="arrow">→</span></h3>
-        <p class="card-desc">Standalone interactive HTML chart exporters: correlation heatmaps, ROC curves, feature importances, and confusion matrix displays.</p>
+        <p class="card-desc">Standalone interactive HTML chart exporters: correlation heatmaps, ROC curves, feature
+          importances, and confusion matrix displays.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -427,7 +439,8 @@
           <span class="card-tag">Computer Vision</span>
         </div>
         <h3 class="card-title">SwiftVision <span class="arrow">→</span></h3>
-        <p class="card-desc">Computer vision pipelines, ImageDataset loader, U-Net Segmentation architecture with Dice/IoU metrics, and feature extractors.</p>
+        <p class="card-desc">Computer vision pipelines, ImageDataset loader, U-Net Segmentation architecture with
+          Dice/IoU metrics, and feature extractors.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -438,7 +451,8 @@
           <span class="card-tag">Databases</span>
         </div>
         <h3 class="card-title">SwiftDatabase <span class="arrow">→</span></h3>
-        <p class="card-desc">Direct relational database connectors (SQLite, PostgreSQL, MySQL) enabling SQL query execution straight into zero-copy DataFrames.</p>
+        <p class="card-desc">Direct relational database connectors (SQLite, PostgreSQL, MySQL) enabling SQL query
+          execution straight into zero-copy DataFrames.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -449,7 +463,8 @@
           <span class="card-tag">AI Agents</span>
         </div>
         <h3 class="card-title">SwiftAgent <span class="arrow">→</span></h3>
-        <p class="card-desc">Safe Swift REPL dynamic execution context & RAG Context Summary Generator for local agentic LLM tool execution.</p>
+        <p class="card-desc">Safe Swift REPL dynamic execution context & RAG Context Summary Generator for local agentic
+          LLM tool execution.</p>
         <div class="card-footer">View Module Docs ↗</div>
       </a>
 
@@ -458,8 +473,10 @@
 
   <footer>
     <p>SwiftSci 2.0 Ecosystem — Licensed under the MIT License. Built for Apple Silicon UMA.</p>
-    <p style="margin-top: 8px;"><a href="https://github.com/Nodibell/SwiftSci" target="_blank">View Project on GitHub</a></p>
+    <p style="margin-top: 8px;"><a href="https://github.com/Nodibell/SwiftSci" target="_blank">View Project on
+        GitHub</a></p>
   </footer>
 
 </body>
+
 </html>

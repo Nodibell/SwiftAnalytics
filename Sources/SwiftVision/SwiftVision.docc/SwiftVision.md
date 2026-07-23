@@ -1,3 +1,5 @@
+Т
+
 # ``SwiftVision``
 
 Computer Vision Framework for Swift on Apple Silicon.
@@ -9,6 +11,7 @@ Computer Vision Framework for Swift on Apple Silicon.
 ## Topics
 
 ### Vision Models & Datasets
+
 - ``ImageDataset``
 - ``UNetSegmentationModel``
 - ``YOLOv8Detector``
