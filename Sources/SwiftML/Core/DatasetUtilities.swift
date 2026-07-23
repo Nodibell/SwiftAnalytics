@@ -90,4 +90,63 @@ public enum DatasetUtilities {
         
         return (features: features, targets: targets)
     }
+
+    /// Generates isotropic Gaussian blobs for clustering.
+    public static func makeClusters(
+        nSamples: Int = 100,
+        nFeatures: Int = 2,
+        centers: Int = 3,
+        clusterStd: Double = 1.0,
+        seed: UInt64 = 42
+    ) -> (features: [[Double]], labels: [Int]) {
+        var rng = SeededRandom(seed: Int(seed))
+        var features: [[Double]] = []
+        var labels: [Int] = []
+        let samplesPerCenter = nSamples / centers
+
+        for c in 0..<centers {
+            let centerPos = (0..<nFeatures).map { _ in Double(c * 5) }
+            for _ in 0..<samplesPerCenter {
+                let row = centerPos.map { $0 + (Double(rng.nextInt(upperBound: 2000)) / 1000.0 - 1.0) * clusterStd }
+                features.append(row)
+                labels.append(c)
+            }
+        }
+        return (features: features, labels: labels)
+    }
+
+    /// Generates a large circle containing a smaller circle in 2D.
+    public static func makeCircles(
+        nSamples: Int = 100,
+        factor: Double = 0.5,
+        noise: Double = 0.05,
+        seed: UInt64 = 42
+    ) -> (features: [[Double]], targets: [Double]) {
+        var rng = SeededRandom(seed: Int(seed))
+        let nHalf = nSamples / 2
+        var features: [[Double]] = []
+        var targets: [Double] = []
+
+        for i in 0..<nHalf {
+            let angle = 2.0 * Double.pi * Double(i) / Double(nHalf)
+            let n1 = (Double(rng.nextInt(upperBound: 2000)) / 1000.0 - 1.0) * noise
+            let n2 = (Double(rng.nextInt(upperBound: 2000)) / 1000.0 - 1.0) * noise
+            let x = cos(angle) + n1
+            let y = sin(angle) + n2
+            features.append([x, y])
+            targets.append(0.0)
+        }
+
+        for i in 0..<nHalf {
+            let angle = 2.0 * Double.pi * Double(i) / Double(nHalf)
+            let n1 = (Double(rng.nextInt(upperBound: 2000)) / 1000.0 - 1.0) * noise
+            let n2 = (Double(rng.nextInt(upperBound: 2000)) / 1000.0 - 1.0) * noise
+            let x = factor * cos(angle) + n1
+            let y = factor * sin(angle) + n2
+            features.append([x, y])
+            targets.append(1.0)
+        }
+
+        return (features: features, targets: targets)
+    }
 }

@@ -167,7 +167,7 @@ internal enum CSVReader {
         for (ci, name) in headers.enumerated() {
             let cells = rawCells[ci]
             let col   = options.inferTypes
-                ? inferColumn(name: name, cells: cells)
+                ? inferColumn(name: name, cells: cells, options: options)
                 : TypedColumn<String>(name: name, values: cells)
             columns.append(col)
         }
@@ -177,8 +177,23 @@ internal enum CSVReader {
 
     // MARK: – Type inference
 
-    /// Infers the best ColumnDType by trying types in priority order.
-    internal static func inferColumn(name: String, cells: [String?]) -> any AnyColumn {
+    /// Infers the best ColumnDType by trying types in priority order or respecting columnTypeOverrides.
+    internal static func inferColumn(name: String, cells: [String?], options: CSVReadOptions = .default) -> any AnyColumn {
+        if let overrideType = options.columnTypeOverrides[name] {
+            switch overrideType {
+            case .int32, .int64:
+                return TypedColumn<Int64>(name: name, values: cells.map { $0.flatMap(Int64.parse) })
+            case .float32, .float64:
+                return TypedColumn<Double>(name: name, values: cells.map { $0.flatMap(Double.parse) })
+            case .boolean:
+                return TypedColumn<Bool>(name: name, values: cells.map { $0.flatMap(Bool.parse) })
+            case .utf8:
+                return TypedColumn<String>(name: name, values: cells)
+            case .date32:
+                return TypedColumn<Date>(name: name, values: cells.map { $0.flatMap(Date.parse) })
+            }
+        }
+
         let nonNull = cells.compactMap { $0 }
         guard !nonNull.isEmpty else {
             return TypedColumn<String>(name: name, values: cells)
@@ -214,6 +229,93 @@ internal enum CSVReader {
         name: String,
         options: CSVReadOptions
     ) -> any AnyColumn {
+        if let overrideType = options.columnTypeOverrides[name] {
+            switch overrideType {
+            case .int32, .int64:
+                var values = [Int64?]()
+                values.reserveCapacity(dataRowsToRead)
+                for r in 0..<dataRowsToRead {
+                    let rowIdx = startRowIdx + r
+                    if rowIdx < records.count && colIndex < records[rowIdx].count {
+                        let offset = records[rowIdx][colIndex]
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        if options.nullValues.contains(str) {
+                            values.append(nil)
+                        } else if let val = VectorizedByteParsers.parseInt(buffer: buffer, offset: offset) {
+                            values.append(Int64(val))
+                        } else {
+                            values.append(Int64.parse(from: str))
+                        }
+                    } else {
+                        values.append(nil)
+                    }
+                }
+                return TypedColumn<Int64>(name: name, values: values)
+            case .float32, .float64:
+                var values = [Double?]()
+                values.reserveCapacity(dataRowsToRead)
+                for r in 0..<dataRowsToRead {
+                    let rowIdx = startRowIdx + r
+                    if rowIdx < records.count && colIndex < records[rowIdx].count {
+                        let offset = records[rowIdx][colIndex]
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        if options.nullValues.contains(str) {
+                            values.append(nil)
+                        } else if let val = VectorizedByteParsers.parseDouble(buffer: buffer, offset: offset) {
+                            values.append(val)
+                        } else {
+                            values.append(Double.parse(from: str))
+                        }
+                    } else {
+                        values.append(nil)
+                    }
+                }
+                return TypedColumn<Double>(name: name, values: values)
+            case .boolean:
+                var values = [Bool?]()
+                values.reserveCapacity(dataRowsToRead)
+                for r in 0..<dataRowsToRead {
+                    let rowIdx = startRowIdx + r
+                    if rowIdx < records.count && colIndex < records[rowIdx].count {
+                        let offset = records[rowIdx][colIndex]
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        values.append(options.nullValues.contains(str) ? nil : Bool.parse(from: str))
+                    } else {
+                        values.append(nil)
+                    }
+                }
+                return TypedColumn<Bool>(name: name, values: values)
+            case .utf8:
+                var values = [String?]()
+                values.reserveCapacity(dataRowsToRead)
+                for r in 0..<dataRowsToRead {
+                    let rowIdx = startRowIdx + r
+                    if rowIdx < records.count && colIndex < records[rowIdx].count {
+                        let offset = records[rowIdx][colIndex]
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        values.append(options.nullValues.contains(str) ? nil : str)
+                    } else {
+                        values.append(nil)
+                    }
+                }
+                return TypedColumn<String>(name: name, values: values)
+            case .date32:
+                var values = [Date?]()
+                values.reserveCapacity(dataRowsToRead)
+                for r in 0..<dataRowsToRead {
+                    let rowIdx = startRowIdx + r
+                    if rowIdx < records.count && colIndex < records[rowIdx].count {
+                        let offset = records[rowIdx][colIndex]
+                        let str = VectorizedByteParsers.parseString(buffer: buffer, offset: offset).trimmingCharacters(in: .whitespaces)
+                        values.append(options.nullValues.contains(str) ? nil : Date.parse(from: str))
+                    } else {
+                        values.append(nil)
+                    }
+                }
+                return TypedColumn<Date>(name: name, values: values)
+            }
+        }
+
         if !options.inferTypes {
             var values = [String?]()
             values.reserveCapacity(dataRowsToRead)

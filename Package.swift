@@ -107,6 +107,7 @@ let package = Package(
         .target(
             name: "SwiftML",
             dependencies: [
+                "SwiftDataFrame",
                 "SwiftPreprocessing",
                 .product(name: "MLX", package: "mlx-swift"),
                 .product(name: "MLXNN", package: "mlx-swift"),
@@ -169,7 +170,6 @@ let package = Package(
         .target(
             name: "SwiftOptimize",
             dependencies: [
-                "SwiftDataFrame",
                 "SwiftML",
             ],
             path: "Sources/SwiftOptimize",
@@ -235,7 +235,6 @@ let package = Package(
             dependencies: [
                 "SwiftML",
                 "SwiftStats",
-                "SwiftDataFrame",
                 "SwiftPreprocessing",
             ],
             path: "Sources/SwiftExplain",

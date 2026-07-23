@@ -1,21 +1,31 @@
 import Foundation
 import SwiftDataFrame
 
+extension PreprocessingTransformer {
+    public func fit(_ df: DataFrame, columns: [String]) throws {
+        try fit(df.toFeatureMatrix(columns))
+    }
+
+    public func transform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
+        let result = try transform(df.toFeatureMatrix(columns))
+        var out = df
+        for (i, name) in columns.enumerated() {
+            out = try out.withColumn(name, column: TypedColumn<Double>(
+                name: name, values: result.map { Optional($0[i]) }
+            ))
+        }
+        return out
+    }
+
+    public func fitTransform(_ df: DataFrame, columns: [String]) throws -> DataFrame {
+        try fit(df, columns: columns)
+        return try transform(df, columns: columns)
+    }
+}
+
 extension DataFrame {
     private func extractFeatures(columns names: [String], allowNaN: Bool = false) throws -> [[Double]] {
-        let nRows = shape.rows
-        guard nRows > 0 else { return [] }
-        
-        var features = [[Double]](repeating: [Double](repeating: 0.0, count: names.count), count: nRows)
-        for (colIdx, colName) in names.enumerated() {
-            guard let col = self[column: colName, as: Double.self] else {
-                throw DataFrameError.columnNotFound(colName)
-            }
-            for rowIdx in 0..<nRows {
-                features[rowIdx][colIdx] = col[rowIdx] ?? (allowNaN ? Double.nan : 0.0)
-            }
-        }
-        return features
+        return try toFeatureMatrix(names)
     }
 
     /// Fits a StandardScaler on the specified columns.

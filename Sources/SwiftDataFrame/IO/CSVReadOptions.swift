@@ -12,6 +12,8 @@ public struct CSVReadOptions: Sendable {
     public var inferTypes: Bool = true
     /// Maximum number of rows to read (nil = unlimited).
     public var maxRows: Int? = nil
+    /// Type overrides for specific columns by name.
+    public var columnTypeOverrides: [String: ColumnDType] = [:]
 
     public init() {}
     public static let `default` = CSVReadOptions()
