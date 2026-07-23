@@ -4,9 +4,16 @@ builder:
     - documentation_targets:
         - SwiftDataFrame
         - SwiftStats
+        - SwiftPreprocessing
         - SwiftML
-        - SwiftForecast
-        - SwiftNLP
-        - SwiftExplain
         - SwiftCluster
+        - SwiftNLP
         - SwiftOptimize
+        - SwiftForecast
+        - SwiftLLM
+        - SwiftExplain
+        - SwiftVisualization
+        - SwiftVision
+        - SwiftDatabase
+        - SwiftAgent
+
