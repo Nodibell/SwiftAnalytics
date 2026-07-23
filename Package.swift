@@ -28,6 +28,7 @@ let package = Package(
         .library(name: "SwiftForecast",      targets: ["SwiftForecast"]),
         .library(name: "SwiftLLM",           targets: ["SwiftLLM"]),
         .library(name: "SwiftExplain",       targets: ["SwiftExplain"]),
+        .library(name: "SwiftVisualization", targets: ["SwiftVisualization"]),
     ],
     dependencies: [
         .package(
@@ -248,6 +249,25 @@ let package = Package(
             name: "SwiftExplainTests",
             dependencies: ["SwiftExplain"],
             path: "Tests/SwiftExplainTests",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+
+        // ── SwiftVisualization ─────────────────────────────────────────────
+        .target(
+            name: "SwiftVisualization",
+            dependencies: [
+                "SwiftDataFrame",
+                "SwiftStats",
+            ],
+            path: "Sources/SwiftVisualization",
+            cSettings: globalCSettings,
+            swiftSettings: globalSwiftSettings
+        ),
+        .testTarget(
+            name: "SwiftVisualizationTests",
+            dependencies: ["SwiftVisualization"],
+            path: "Tests/SwiftVisualizationTests",
             cSettings: globalCSettings,
             swiftSettings: globalSwiftSettings
         ),
