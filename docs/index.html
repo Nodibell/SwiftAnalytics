@@ -1,1 +1,349 @@
-<!doctype html><html lang="en-US" class="no-js"><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="icon" href="/SwiftSci/favicon.ico"><link rel="mask-icon" href="/SwiftSci/favicon.svg" color="#333333"><title>Documentation</title><script>var baseUrl = "/SwiftSci/"</script><script defer="defer" src="/SwiftSci/js/chunk-vendors.88e02fc3.js"></script><script defer="defer" src="/SwiftSci/js/index.43237eed.js"></script><link href="/SwiftSci/css/index.63be42cf.css" rel="stylesheet"></head><body data-color-scheme="auto"><noscript><style>.noscript{font-family:"SF Pro Display","SF Pro Icons","Helvetica Neue",Helvetica,Arial,sans-serif;margin:92px auto 140px auto;text-align:center;width:980px}.noscript-title{color:#111;font-size:48px;font-weight:600;letter-spacing:-.003em;line-height:1.08365;margin:0 auto 54px auto;width:502px}@media only screen and (max-width:1068px){.noscript{margin:90px auto 120px auto;width:692px}.noscript-title{font-size:40px;letter-spacing:0;line-height:1.1;margin:0 auto 45px auto;width:420px}}@media only screen and (max-width:735px){.noscript{margin:45px auto 60px auto;width:87.5%}.noscript-title{font-size:32px;letter-spacing:.004em;line-height:1.125;margin:0 auto 35px auto;max-width:330px;width:auto}}#loading-placeholder{display:none}</style><div class="noscript"><h1 class="noscript-title">This page requires JavaScript.</h1><p>Please turn on JavaScript in your browser and refresh the page to view its content.</p></div></noscript><div id="app"></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SwiftSci — Documentation</title>
+  <meta name="description" content="SwiftSci: Native high-performance data analysis and machine learning library for Swift on Apple Silicon.">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --accent: #f78166;
+      --accent2: #79c0ff;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --card-hover: #1f2937;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    header {
+      padding: 60px 24px 40px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #161b22 0%, #0d1117 100%);
+    }
+
+    .logo {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #f78166, #79c0ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 17px;
+      max-width: 560px;
+      margin: 0 auto 24px;
+      line-height: 1.6;
+    }
+
+    .badges {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+
+    .badges img { height: 20px; }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 48px 24px;
+    }
+
+    h2 {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 24px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.2s, background 0.2s, transform 0.15s;
+    }
+
+    .card:hover {
+      border-color: var(--accent2);
+      background: var(--card-hover);
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-icon {
+      font-size: 22px;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(121, 192, 255, 0.1);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .card-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent2);
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+
+    .card-desc {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .card-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+    }
+
+    .tag {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: rgba(247, 129, 102, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(247, 129, 102, 0.2);
+      font-family: "SF Mono", monospace;
+    }
+
+    .bench-section { margin-bottom: 56px; }
+
+    .bench-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .bench-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: var(--surface);
+      color: var(--muted);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bench-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 12px;
+    }
+
+    .bench-table tr:hover td { background: var(--surface); }
+    .win-swift { color: #3fb950; }
+    .win-python { color: var(--muted); }
+
+    footer {
+      text-align: center;
+      padding: 32px 24px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    footer a { color: var(--accent2); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SwiftSci</div>
+  <p class="tagline">Native high-performance data analysis & machine learning for Swift on Apple Silicon. Swift 6 strict concurrency. MLX + Accelerate.</p>
+  <div class="badges">
+    <img src="https://img.shields.io/badge/Swift-6.0-orange?logo=swift" alt="Swift 6">
+    <img src="https://img.shields.io/badge/platform-macOS%20%7C%20iOS-lightgrey" alt="Platform">
+    <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT License">
+    <img src="https://img.shields.io/badge/version-1.7.0-brightgreen" alt="v1.7.0">
+  </div>
+</header>
+
+<main>
+
+  <h2>📦 Modules</h2>
+  <div class="grid">
+
+    <a class="card" href="/SwiftSci/documentation/swiftdataframe/">
+      <div class="card-header">
+        <div class="card-icon">🗄️</div>
+        <span class="card-name">SwiftDataFrame</span>
+      </div>
+      <p class="card-desc">Zero-copy columnar data manipulation on Apache Arrow. SystemsCSVParser, hash joins, pivot/melt, toFeatureMatrix.</p>
+      <div class="card-tags"><span class="tag">CSV</span><span class="tag">Arrow</span><span class="tag">GroupBy</span><span class="tag">Join</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftstats/">
+      <div class="card-header">
+        <div class="card-icon">📐</div>
+        <span class="card-name">SwiftStats</span>
+      </div>
+      <p class="card-desc">Vectorized descriptive statistics, distributions, correlation, and hypothesis tests via Accelerate vDSP.</p>
+      <div class="card-tags"><span class="tag">vDSP</span><span class="tag">t-test</span><span class="tag">Pearson</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftpreprocessing/">
+      <div class="card-header">
+        <div class="card-icon">⚙️</div>
+        <span class="card-name">SwiftPreprocessing</span>
+      </div>
+      <p class="card-desc">Scalers, OneHotEncoder, TargetEncoder, FrequencyEncoder, KNNImputer, feature selection, Pipeline, ColumnTransformer.</p>
+      <div class="card-tags"><span class="tag">Scaler</span><span class="tag">Encoder</span><span class="tag">KNNImputer</span><span class="tag">Pipeline</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftml/">
+      <div class="card-header">
+        <div class="card-icon">🤖</div>
+        <span class="card-name">SwiftML</span>
+      </div>
+      <p class="card-desc">Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs, MLPClassifier/MLPRegressor, Codable persistence.</p>
+      <div class="card-tags"><span class="tag">RandomForest</span><span class="tag">GBDT</span><span class="tag">MLP</span><span class="tag">Codable</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftcluster/">
+      <div class="card-header">
+        <div class="card-icon">🔵</div>
+        <span class="card-name">SwiftCluster</span>
+      </div>
+      <p class="card-desc">SVD-based PCA, DBSCAN, KMeans++, IsolationForest, LocalOutlierFactor.</p>
+      <div class="card-tags"><span class="tag">PCA</span><span class="tag">KMeans</span><span class="tag">DBSCAN</span><span class="tag">LOF</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftoptimize/">
+      <div class="card-header">
+        <div class="card-icon">🎯</div>
+        <span class="card-name">SwiftOptimize</span>
+      </div>
+      <p class="card-desc">KFold cross-validation, ROC-AUC, Precision/Recall/F1, GridSearchCV, RandomizedSearchCV.</p>
+      <div class="card-tags"><span class="tag">KFold</span><span class="tag">ROC-AUC</span><span class="tag">GridSearch</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftforecast/">
+      <div class="card-header">
+        <div class="card-icon">📈</div>
+        <span class="card-name">SwiftForecast</span>
+      </div>
+      <p class="card-desc">ARIMA, SARIMA, Holt-Winters, GARCH, Kalman filter, ExpandingWindow, additive/multiplicative decomposition.</p>
+      <div class="card-tags"><span class="tag">ARIMA</span><span class="tag">Kalman</span><span class="tag">GARCH</span><span class="tag">85× Python</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftnlp/">
+      <div class="card-header">
+        <div class="card-icon">💬</div>
+        <span class="card-name">SwiftNLP</span>
+      </div>
+      <p class="card-desc">StopWords, TextNormalizer, BPE tokenizer, NGramTokenizer, HashingVectorizer, TFIDFVectorizer, embeddings.</p>
+      <div class="card-tags"><span class="tag">BPE</span><span class="tag">TF-IDF</span><span class="tag">Embeddings</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftexplain/">
+      <div class="card-header">
+        <div class="card-icon">🔍</div>
+        <span class="card-name">SwiftExplain</span>
+      </div>
+      <p class="card-desc">Black-box model explainability via parallelized KernelSHAP. 5× faster than Python SHAP.</p>
+      <div class="card-tags"><span class="tag">KernelSHAP</span><span class="tag">XAI</span><span class="tag">5× Python</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftllm/">
+      <div class="card-header">
+        <div class="card-icon">🧠</div>
+        <span class="card-name">SwiftLLM</span>
+      </div>
+      <p class="card-desc">On-device LLM inference via causal transformer-decoder on Apple Silicon GPU. SafeTensors & GGUF parsing.</p>
+      <div class="card-tags"><span class="tag">MLX</span><span class="tag">SafeTensors</span><span class="tag">GGUF</span></div>
+    </a>
+
+    <a class="card" href="/SwiftSci/documentation/swiftvisualization/">
+      <div class="card-header">
+        <div class="card-icon">📊</div>
+        <span class="card-name">SwiftVisualization</span>
+      </div>
+      <p class="card-desc">Interactive HTML chart exporters: correlation heatmaps, ROC curves, feature importance bars, confusion matrices.</p>
+      <div class="card-tags"><span class="tag">Plotly</span><span class="tag">Heatmap</span><span class="tag">ROC</span><span class="tag">HTML</span></div>
+    </a>
+
+  </div>
+
+  <div class="bench-section">
+    <h2>⚡ Performance vs Python (Apple Silicon M-series)</h2>
+    <table class="bench-table">
+      <thead>
+        <tr>
+          <th>Benchmark</th>
+          <th>Swift</th>
+          <th>Python</th>
+          <th>Speedup</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>ARIMA fit (50k pts)</td><td class="win-swift">2.36 ms</td><td>201.62 ms</td><td class="win-swift">85× faster</td></tr>
+        <tr><td>Holt-Winters fit (50k pts)</td><td class="win-swift">6.72 ms</td><td>133.76 ms</td><td class="win-swift">20× faster</td></tr>
+        <tr><td>KernelSHAP Explain</td><td class="win-swift">0.084 ms</td><td>0.426 ms</td><td class="win-swift">5.1× faster</td></tr>
+        <tr><td>Random Forest fit (1k×4)</td><td class="win-swift">4.84 ms</td><td>24.03 ms</td><td class="win-swift">5.0× faster</td></tr>
+        <tr><td>KMeans fit (10k×4)</td><td>30.87 ms</td><td>11.87 ms</td><td class="win-python">0.38×</td></tr>
+        <tr><td>CSV Read (100k rows)</td><td>98.39 ms</td><td>18.05 ms</td><td class="win-python">0.18×</td></tr>
+        <tr><td>Kalman Filter (10k obs)</td><td class="win-swift">64.52 ms</td><td>80.45 ms</td><td class="win-swift">1.25× faster</td></tr>
+        <tr><td>Mean (1M elements)</td><td class="win-swift">0.081 ms</td><td>0.123 ms</td><td class="win-swift">1.52× faster</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</main>
+
+<footer>
+  <p>
+    <a href="https://github.com/Nodibell/SwiftSci">GitHub</a> ·
+    <a href="https://github.com/Nodibell/SwiftSci/releases">Releases</a> ·
+    <a href="https://swiftpackageindex.com/Nodibell/SwiftSci">Swift Package Index</a> ·
+    MIT License · v1.7.0
+  </p>
+</footer>
+
+</body>
+</html>
