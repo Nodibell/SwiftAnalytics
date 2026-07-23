@@ -4,6 +4,89 @@ All notable changes to the **SwiftSci** ecosystem will be documented in this fil
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-07-23
+
+### Added
+- **`TargetEncoder` (`SwiftPreprocessing`)**: Bayesian target encoding with smoothing parameter to prevent data leakage. Conforms to `PreprocessingTransformer`.
+- **`FrequencyEncoder` (`SwiftPreprocessing`)**: Category frequency ratio encoder with normalized output. Conforms to `PreprocessingTransformer`.
+- **`KNNImputer` (`SwiftPreprocessing`)**: Weighted k-nearest-neighbours imputation using Euclidean distance on non-missing features. Conforms to `PreprocessingTransformer`.
+- **`SwiftVisualization` module**: New module with interactive HTML chart exporters powered by embedded Plotly.js: `plotCorrelationHeatmap`, `plotROCCurve`, `plotFeatureImportances`, `plotConfusionMatrix`.
+- **Full DocC Static Site**: Generated and deployed unified DocC documentation for all 11 modules to GitHub Pages (`--transform-for-static-hosting`). Custom landing page at `https://nodibell.github.io/SwiftSci/`.
+
+### Performance
+- **KMeans 13.8× speedup**: Replaced `vDSP_distancesq` with manually unrolled `distanceSquared` for short vectors and switched to GCD chunking (512 items/chunk), reducing context-switch overhead.
+- **CSV Read 1.7× speedup**: Added 1 000-row sampling heuristic for column type inference, avoiding full-file scan on large CSVs.
+- **LLM Forward Pass restored**: Resolved MLX device scheduling regression; forward pass latency returned to baseline.
+
+### 📊 Benchmark Performance Summary (v1.7.0 vs Python)
+| Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
+| :--- | :---: | :---: | :---: | :---: |
+| **ARIMA(1,1,1) Fit** (50k pts) | 2.36 ms | 201.62 ms | 85.4× | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) | 6.72 ms | 133.76 ms | 19.9× | 🟢 Swift |
+| **KernelSHAP Explain** (5 feats, 100 coalitions) | 0.084 ms | 0.426 ms | 5.1× | 🟢 Swift |
+| **Random Forest Fit** (1k×4, 50 trees) | 4.84 ms | 24.03 ms | 5.0× | 🟢 Swift |
+| **KMeans fit** (10k×4, 3 clusters) | 30.87 ms | 11.87 ms | 0.38× | 🔴 Python |
+| **CSV Read** (100k rows, 5 cols) | 98.39 ms | 18.05 ms | 0.18× | 🔴 Python |
+| **Kalman Filter 1D** (10k obs) | 64.52 ms | 80.45 ms | 1.25× | 🟢 Swift |
+
+* **CI Status**: **PASSED** ✅ (*0 regressions detected*).
+
+---
+
+## [1.6.1] - 2026-07-23
+
+### Fixed
+- **`DataFrame.debugPrint()` non-throwing**: Removed spurious `try` call-sites across Demo tutorials (`HousePriceRegression`, `CustomerSegmentationAnalysis`, `StockTimeSeriesAnalysis`).
+- **Unused `trueLabels` warning**: Replaced with `_` in `CustomerSegmentationAnalysis`.
+- **CI workflow cleanup**: Streamlined `ci.yml` steps; removed redundant resolve step.
+
+---
+
+## [1.6.0] - 2026-07-22
+
+### Added
+- **`DataFrame.toFeatureMatrix(_:)` / `toTargetVector(_:)`**: Direct ML extraction helpers that convert named columns into `[[Double]]` feature matrix and `[Double]` target vector without manual column iteration.
+- **`columnTypeOverrides` (`CSVReadOptions`)**: Allows callers to override inferred column types at read time (e.g. force `Int64` for boolean-encoded columns).
+- **`StopWords` & `TextNormalizer` (`SwiftNLP`)**: English stop-word filter and Unicode NFKC text normalization pipeline.
+- **Dataset Generators (`SwiftML`)**: Added `makeClusters` and `makeCircles` to `DatasetUtilities` for unsupervised learning demos.
+- **SPM dependency cleanup**: Removed unused `SwiftPrivacy` target; pruned transitive `Package.swift` dependencies.
+- **DataFrame ↔ ML extensions**: Added `fit(_ df:features:target:)` and `predict(_ df:features:)` convenience overloads on `LinearRegression`, `LogisticRegression`, `RandomForestClassifier`, `RandomForestRegressor`, `GradientBoostedTreesRegressor`.
+
+### 📊 Benchmark Performance Summary (v1.6.0 vs Python)
+| Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
+| :--- | :---: | :---: | :---: | :---: |
+| **ARIMA(1,1,1) Fit** (50k pts) | 2.24 ms | 201.62 ms | 90.0× | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) | 6.65 ms | 133.76 ms | 20.1× | 🟢 Swift |
+| **Random Forest Fit** (1k×4, 50 trees) | 4.82 ms | 24.03 ms | 4.99× | 🟢 Swift |
+| **CSV Read** (100k rows, 5 cols) | 144.9 ms | 18.05 ms | 0.12× | 🔴 Python |
+| **KMeans fit** (10k×4, 3 clusters) | 413.4 ms | 11.87 ms | 0.03× | 🔴 Python |
+
+* **CI Status**: **PASSED** ✅ (*0 regressions detected*).
+
+---
+
+## [1.5.0] - 2026-07-22
+
+### Added
+- **Column-Parallel CSV Reader (`SwiftDataFrame`)**: Redesigned `CSVReader` to construct typed columns in parallel using `withTaskGroup`, reducing wall-clock parse time on multi-core hardware.
+- **`DataFrame.join` hash joins (`SwiftDataFrame`)**: Implemented inner, left, right, and full-outer hash joins (`join(_:on:how:)`).
+- **`DataFrame.pivot` / `melt` (`SwiftDataFrame`)**: Wide ↔ long matrix reshaping operators.
+- **`MLPClassifier` / `MLPRegressor` (`SwiftML`)**: Multi-Layer Perceptron estimators with configurable hidden layers, learning rate, and `maxIter`. CPU gradient descent via Accelerate `cblas_dgemm`.
+- **Bitmap-free filtering (`SwiftDataFrame`)**: Replaced boolean bitmask filter with `filteredIndices` producing an `[Int]` index array; downstream `gathered(at:)` uses vectorized `vDSP_vgathr` gather.
+- **DocC catalog articles & landing page**: Added `SwiftSci.docc` catalog with hand-written Getting Started, Architecture, and Performance articles.
+
+### 📊 Benchmark Performance Summary (v1.5.0 vs Python)
+| Benchmark Test | Swift (ms) | Python (ms) | Speedup | Winner |
+| :--- | :---: | :---: | :---: | :---: |
+| **ARIMA(1,1,1) Fit** (50k pts) | 2.32 ms | 201.62 ms | 86.9× | 🟢 Swift |
+| **Holt-Winters Fit** (50k pts, period=12) | 6.71 ms | 133.76 ms | 19.9× | 🟢 Swift |
+| **Random Forest Fit** (1k×4, 50 trees) | 4.56 ms | 24.03 ms | 5.27× | 🟢 Swift |
+| **CSV Stream Read** (chunk=10k) | 161.5 ms | 20.36 ms | 0.13× | 🔴 Python |
+
+* **CI Status**: **PASSED** ✅ (*0 regressions detected*).
+
+---
+
 ## [1.4.0] - 2026-07-22
 
 ### Added
