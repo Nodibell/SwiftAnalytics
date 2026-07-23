@@ -2,7 +2,7 @@
 
 **SwiftSci** is a native, high-performance, modular data analysis and machine learning library for Swift. It is built from the ground up to leverage Apple Silicon (M-series) unified memory architecture (UMA) and is fully compliant with Swift 6 strict concurrency requirements.
 
-The package combines hardware-accelerated tensor computations on the Apple Silicon GPU via **MLX** with highly optimized CPU vector routines from the **Accelerate framework (vDSP / LAPACK)**.
+The package combines hardware-accelerated tensor computations on the Apple Silicon GPU via **MLX** with highly optimized CPU vector routines from the **Accelerate framework (vDSP / LAPACK / BLAS)**.
 
 [![Swift Version](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FNodibell%2FSwiftSci%2Fbadge%3Ftype%3Dswift-versions)](https://swiftpackageindex.com/Nodibell/SwiftSci)
 [![Platform Compatibility](https://img.shields.io/endpoint?url=https%3A%2F%2Fswiftpackageindex.com%2Fapi%2Fpackages%2FNodibell%2FSwiftSci%2Fbadge%3Ftype%3Dplatforms)](https://swiftpackageindex.com/Nodibell/SwiftSci)
@@ -11,15 +11,13 @@ The package combines hardware-accelerated tensor computations on the Apple Silic
 
 ## 🚀 Core Modules
 
-## 🚀 Core Modules
-
-* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Features `SystemsCSVParser` (zero-copy memory-mapped RFC 4180 DFA byte scanner) and parallel chunk-buffered streaming.
+* **`SwiftDataFrame`**: High-performance columnar data manipulation with zero-copy semantics, built on top of `Apache Arrow`. Features `SystemsCSVParser` (zero-copy memory-mapped RFC 4180 DFA byte scanner), parallel column construction, bitmap-free `filteredIndices`, vectorized `vGather` index matching, `DataFrame.join` (inner, left, right, outer hash joins), and `DataFrame.pivot` / `melt` matrix reshaping.
 * **`SwiftStats`**: Vectorized descriptive statistics, distributions, and hypothesis tests powered by `Accelerate vDSP`.
-* **`SwiftPreprocessing`**: Feature scaling, categorical encoding, binning, feature selection (`SelectKBest`, `VarianceThreshold`, `RecursiveFeatureElimination` RFE), and preprocessing pipelines (`Pipeline`).
-* **`SwiftML`**: Classical estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs) with Gini `featureImportances` and `Codable` model persistence (`save`/`load`).
-* **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN), outlier detection (`IsolationForest`, `LocalOutlierFactor`), and clustering (`KMeans` with KMeans++ init).
-* **`SwiftOptimize`**: Model validation (`KFold` cross-validation), evaluation metrics, and parallel hyperparameter optimization (`GridSearchCV`).
-* **`SwiftForecast`**: Time series analysis (decomposition, Holt-Winters, ARIMA, SARIMA seasonal models, GARCH volatility, Kalman filtering, `ExpandingWindow`).
+* **`SwiftPreprocessing`**: Feature scaling (`StandardScaler`, `MinMaxScaler`, `RobustScaler`), categorical encoding (`OneHotEncoder`, `OrdinalEncoder`), discretization (`KBinsDiscretizer`), feature selection (`SelectKBest`, `VarianceThreshold`, `RecursiveFeatureElimination` RFE), and composable pipelines (`Pipeline`, `ColumnTransformer`).
+* **`SwiftML`**: Supervised learning estimators (Linear/Logistic Regression, Decision Trees, Random Forests, GBDTs, `MLPClassifier` / `MLPRegressor` Multi-Layer Perceptrons) with Gini `featureImportances` and `Codable` model persistence (`save`/`load`).
+* **`SwiftCluster`**: Dimensionality reduction (SVD-based PCA, DBSCAN), outlier detection (`IsolationForest`, `LocalOutlierFactor`), and clustering (`KMeans` with KMeans++ init and vectorized CPU accumulation).
+* **`SwiftOptimize`**: Model validation (`KFold` cross-validation), evaluation metrics (ROC-AUC, Precision, Recall, F1), and parallel hyperparameter optimization (`GridSearchCV`, `RandomizedSearchCV`).
+* **`SwiftForecast`**: Time series analysis (vectorized additive/multiplicative decomposition, Holt-Winters, ARIMA, SARIMA seasonal models, GARCH volatility, Kalman filtering, `ExpandingWindow`).
 * **`SwiftNLP`**: Tokenization (Word, subword BPE, `NGramTokenizer`), feature extraction (`HashingVectorizer`, `CountVectorizer`, `TFIDFVectorizer`), and static word embeddings.
 * **`SwiftExplain`**: Black-box model explainability using a parallelized `KernelSHAP` implementation.
 * **`SwiftLLM`**: Local text generation on GPU using causal transformer-decoder architectures and MLX. Supports SafeTensors and GGUF weight parsing.
@@ -37,25 +35,25 @@ The following table presents median execution times on an **Apple Silicon M-seri
 | **Variance** (1M elements) | 0.476 ms | 0.500 ms | 1.05x | 🟢 Swift |
 | **Pearson Correlation** (500k elements) | 0.765 ms | 1.159 ms | 1.52x | 🟢 Swift |
 | **CSV Read** (100k rows, 5 cols) | 69.143 ms | 18.053 ms | 0.26x | 🔴 Python |
-| **CSV Stream Read** (chunk=10k) | 239.801 ms | 20.368 ms | 0.08x | 🔴 Python |
-| **CSV Stream + Filter** | 244.250 ms | 22.597 ms | 0.09x | 🔴 Python |
-| **CSV Stream + GroupBy** | 244.690 ms | 25.488 ms | 0.10x | 🔴 Python |
-| **Filter rows** (100k rows) | 29.606 ms | 0.537 ms | 0.02x | 🔴 Python |
+| **CSV Stream Read** (chunk=10k) | 163.277 ms | 20.368 ms | 0.12x | 🔴 Python |
+| **CSV Stream + Filter** | 152.580 ms | 22.597 ms | 0.15x | 🔴 Python |
+| **CSV Stream + GroupBy** | 149.870 ms | 25.488 ms | 0.17x | 🔴 Python |
+| **Filter rows** (100k rows) | 26.515 ms | 0.537 ms | 0.02x | 🔴 Python |
 | **GroupBy + sum/mean** (4 groups) | 2.324 ms | 1.593 ms | 0.69x | 🔴 Python |
-| **SortBy double column** (100k rows) | 76.556 ms | 6.506 ms | 0.08x | 🔴 Python |
-| **LinearRegression fit** (10k×10, 100 epochs) | 27.538 ms | 23.542 ms | 0.85x | 🔴 Python |
-| **Random Forest fit** (1k x 4 features, 50 trees) | 4.781 ms | 24.030 ms | 5.03x | 🟢 Swift |
-| **GBDT Regressor fit** (1k x 4, 50 estimators) | 32.803 ms | 30.839 ms | 0.94x | 🔴 Python |
-| **KMeans fit** (10k x 4, 3 clusters) | 50.827 ms | 11.877 ms | 0.23x | 🔴 Python |
-| **PCA SVD fit** (1k×100 → 10 components) | 2.024 ms | 0.787 ms | 0.39x | 🔴 Python |
-| **Holt-Winters fit** (50k points, period=12) | 6.310 ms | 133.764 ms | 21.20x | 🟢 Swift |
-| **ARIMA fit** (50k points, Hannan-Rissanen) | 2.274 ms | 201.623 ms | 88.68x | 🟢 Swift |
-| **ARIMA forecast horizon=24** (50k points) | 2.322 ms | 202.574 ms | 87.23x | 🟢 Swift |
-| **Kalman Filter 1D** (10k observations) | 58.323 ms | 80.455 ms | 1.38x | 🟢 Swift |
-| **TS Decomposition additive** (1k points) | 0.437 ms | 0.093 ms | 0.21x | 🔴 Python |
-| **LLM Forward Pass** (seqLen=64) | 0.739 ms | 0.457 ms | 0.62x | 🔴 Python |
-| **LLM Generate** (10 tokens) | 5.394 ms | 3.540 ms | 0.66x | 🔴 Python |
-| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.176 ms | 0.426 ms | 2.42x | 🟢 Swift |
+| **SortBy double column** (100k rows) | 66.940 ms | 6.506 ms | 0.10x | 🔴 Python |
+| **LinearRegression fit** (10k×10, 100 epochs) | 26.622 ms | 23.542 ms | 0.88x | 🔴 Python |
+| **Random Forest fit** (1k x 4 features, 50 trees) | 4.701 ms | 24.030 ms | 5.11x | 🟢 Swift |
+| **GBDT Regressor fit** (1k x 4, 50 estimators) | 35.529 ms | 30.839 ms | 0.87x | 🔴 Python |
+| **KMeans fit** (10k x 4, 3 clusters) | 388.521 ms | 11.877 ms | 0.03x | 🔴 Python |
+| **PCA SVD fit** (1k×100 → 10 components) | 2.093 ms | 0.787 ms | 0.38x | 🔴 Python |
+| **Holt-Winters fit** (50k points, period=12) | 6.853 ms | 133.764 ms | 19.52x | 🟢 Swift |
+| **ARIMA fit** (50k points, Hannan-Rissanen) | 2.418 ms | 201.623 ms | 83.38x | 🟢 Swift |
+| **ARIMA forecast horizon=24** (50k points) | 2.510 ms | 202.574 ms | 80.70x | 🟢 Swift |
+| **Kalman Filter 1D** (10k observations) | 67.985 ms | 80.455 ms | 1.18x | 🟢 Swift |
+| **TS Decomposition additive** (1k points) | 0.413 ms | 0.093 ms | 0.23x | 🔴 Python |
+| **LLM Forward Pass** (seqLen=64) | 0.489 ms | 0.457 ms | 0.93x | 🔴 Python |
+| **LLM Generate** (10 tokens) | 3.907 ms | 3.540 ms | 0.91x | 🔴 Python |
+| **KernelSHAP Explain** (5 features, 100 coalitions) | 0.199 ms | 0.426 ms | 2.14x | 🟢 Swift |
 
 ---
 
@@ -71,38 +69,32 @@ Traditional object-oriented trees (where every node is a reference type containi
 ### 2. Intelligent Hardware Routing
 We implement a flexible compute device routing policy (`requestedDevice` / `resolvedDevice`):
 * Branch-heavy algorithms (such as Decision Trees, Random Forests, or spatial DBSCAN search) run strictly on CPU.
-* Large tensor operations (Linear/Logistic Regression, K-Means) leverage Apple Silicon GPU execution blocks via `MLXArray` lazy evaluation.
+* Large tensor operations (Linear/Logistic Regression, Multi-Layer Perceptrons) leverage Apple Silicon GPU execution blocks via `MLXArray` lazy evaluation and Accelerate `BLAS` (`cblas_dgemm`).
 
 ### 3. Optional NaN Validation Bypass
 We identified that running $O(N)$ CPU sweeps to check for `NaN` presence in statistical calculations adds significant CPU bottlenecks that limit the speed of underlying `vDSP` functions. In v1.0, we introduced a `checkNaN: Bool = true` default parameter to descriptive stats. When bypassed (set to `false` in benchmarks and hot loops), SwiftStats leverages pure hardware SIMD speeds, outperforming NumPy.
 
 ---
 
-## ⚠️ Known Gaps & Limitations
-
-1. **Standard CSV Parser Overhead**: The standard CSV reader runs with $O(N)$ CPU overhead. In v1.1.0, this is resolved by using the parallel streaming CSV parser (`DataFrame.readCSVStream`) returning `AsyncThrowingStream` for high-performance file parsing.
-2. **MLX Sendable Isolation**: `MLXArray` does not conform to `Sendable`. This is handled in the library through strict actor isolation and passing memory ownership tokens (`WiredMemoryTicket`).
-
----
-
 ## 💻 Quick Start
 
 ```swift
+import Foundation
 import SwiftDataFrame
-import SwiftStats
 import SwiftML
 
-// 1. Load CSV data
-let df = try DataFrame.readCSV(contentsOf: csvURL)
+// 1. Load CSV data via zero-copy memory-mapped parser
+let fileURL = URL(filePath: "/path/to/data.csv")
+let df = try await DataFrame(csv: fileURL)
 
-// 2. Compute descriptive statistics without NaN checks for maximum speed
-let summary = try Stats.describe(df["target"].toDoubles()!, checkNaN: false)
-print(summary)
+// 2. Perform DataFrame hash joins & column transformations
+let joined = try df1.join(df2, on: "id", how: .inner)
+let pivoted = try joined.pivot(index: "date", columns: "city", values: "sales")
 
-// 3. Train a GPU-accelerated Estimator
-let regressor = LinearRegression(device: .gpu)
-try await regressor.fit(features: X, targets: y)
-let predictions = try await regressor.predict(features: X_test)
+// 3. Train Multi-Layer Perceptron (MLP) Neural Network
+let mlp = MLPClassifier(hiddenLayerSizes: [64, 32], maxIter: 200, learningRate: 0.01, seed: 42)
+try await mlp.fit(features: X_train, targets: y_train)
+let predictions = try await mlp.predict(features: X_test)
 ```
 
 ---
@@ -114,6 +106,7 @@ For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](ROADM
 * **v1.2 (Completed 🟢)**: Package renaming (`SwiftSci`), Kalman filter Joseph form fix, byte-level BPE, `addColumn`.
 * **v1.3 (Completed 🟢)**: Scikit-Learn Parity (`Pipeline`, `ColumnTransformer`, `RandomizedSearchCV`, `IsolationForest`, `LocalOutlierFactor`, `SMOTE`, `SelectKBest`, `Gini` feature importances).
 * **v1.4 (Completed 🟢)**: High-Performance Engine & Quality (`SystemsCSVParser` zero-copy memory-mapped DFA, `RecursiveFeatureElimination` RFE, `Codable` model persistence, `NGramTokenizer`, `HashingVectorizer`, `ExpandingWindow`, `swift-docc-plugin`).
+* **v1.5 (Completed 🟢)**: Engine Overhaul & DocC Sprint (Column-parallel CSV reader, `DataFrame.join` hash joins, `pivot`/`melt` matrix reshaping, `MLPClassifier`/`MLPRegressor`, bitmap-free filtering, DocC articles & catalog landing page).
 
 ---
 
