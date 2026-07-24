@@ -1,7 +1,11 @@
 version: 1
 builder:
   configs:
-    - documentation_targets:
+    - platform_compatibility:
+        - macos
+        - ios
+        - visionos
+      documentation_targets:
         - SwiftDataFrame
         - SwiftStats
         - SwiftPreprocessing
@@ -16,4 +20,3 @@ builder:
         - SwiftVision
         - SwiftDatabase
         - SwiftAgent
-

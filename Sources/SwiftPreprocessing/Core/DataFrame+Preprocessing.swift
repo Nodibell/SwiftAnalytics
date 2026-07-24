@@ -260,4 +260,78 @@ extension DataFrame {
         let discretizedDf = try kBinsDiscretize(columns: names, discretizer: discretizer)
         return (discretizedDf, discretizer)
     }
+
+    // MARK: - Time Series Rolling & EWMA Features
+
+    /// Adds a rolling mean column for the specified numeric column.
+    public func withRollingMean(column name: String, window: Int) throws -> DataFrame {
+        guard let col = self[column: name, as: Double.self] else {
+            throw DataFrameError.columnNotFound(name)
+        }
+        let values = col.values.map { $0 ?? 0.0 }
+        let n = values.count
+        var rolling = [Double?](repeating: nil, count: n)
+
+        for i in 0..<n {
+            let start = max(0, i - window + 1)
+            let slice = values[start...i]
+            let sum = slice.reduce(0, +)
+            rolling[i] = sum / Double(slice.count)
+        }
+
+        let newName = "\(name)_rolling_mean_\(window)"
+        let newCol = TypedColumn<Double>(name: newName, values: rolling)
+        return try withColumn(newName, column: newCol)
+    }
+
+    /// Adds a rolling standard deviation column for the specified numeric column.
+    public func withRollingStd(column name: String, window: Int) throws -> DataFrame {
+        guard let col = self[column: name, as: Double.self] else {
+            throw DataFrameError.columnNotFound(name)
+        }
+        let values = col.values.map { $0 ?? 0.0 }
+        let n = values.count
+        var rolling = [Double?](repeating: nil, count: n)
+
+        for i in 0..<n {
+            let start = max(0, i - window + 1)
+            let slice = Array(values[start...i])
+            if slice.count <= 1 {
+                rolling[i] = 0.0
+            } else {
+                let mean = slice.reduce(0, +) / Double(slice.count)
+                let variance = slice.map { pow($0 - mean, 2) }.reduce(0, +) / Double(slice.count - 1)
+                rolling[i] = sqrt(variance)
+            }
+        }
+
+        let newName = "\(name)_rolling_std_\(window)"
+        let newCol = TypedColumn<Double>(name: newName, values: rolling)
+        return try withColumn(newName, column: newCol)
+    }
+
+    /// Adds an Exponentially Weighted Moving Average (EWMA) column for the specified numeric column.
+    public func withEWMA(column name: String, alpha: Double) throws -> DataFrame {
+        precondition(alpha > 0 && alpha <= 1.0, "Alpha must be in (0, 1]")
+        guard let col = self[column: name, as: Double.self] else {
+            throw DataFrameError.columnNotFound(name)
+        }
+        let values = col.values.map { $0 ?? 0.0 }
+        let n = values.count
+        var ewma = [Double?](repeating: nil, count: n)
+
+        if n > 0 {
+            ewma[0] = values[0]
+            for i in 1..<n {
+                let prev = ewma[i - 1] ?? 0.0
+                ewma[i] = alpha * values[i] + (1.0 - alpha) * prev
+            }
+        }
+
+        let alphaStr = String(format: "%.2f", alpha)
+        let newName = "\(name)_ewma_\(alphaStr)"
+        let newCol = TypedColumn<Double>(name: newName, values: ewma)
+        return try withColumn(newName, column: newCol)
+    }
 }
+

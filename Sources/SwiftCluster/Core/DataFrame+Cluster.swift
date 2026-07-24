@@ -53,4 +53,19 @@ extension DataFrame {
         try await dbscan.fit(features: features)
         return dbscan
     }
+    
+    /// Computes the Silhouette Score for cluster assignments on specified DataFrame columns.
+    public func computeSilhouetteScore(columns names: [String], labels: [Int]) throws -> Double {
+        let features = try extractFeatures(columns: names)
+        return try SilhouetteScore.compute(features: features, labels: labels)
+    }
+    
+    /// Computes Calinski-Harabasz and Davies-Bouldin index metrics for cluster assignments.
+    public func computeClusteringMetrics(columns names: [String], labels: [Int]) throws -> (calinskiHarabasz: Double, daviesBouldin: Double) {
+        let features = try extractFeatures(columns: names)
+        let ch = ClusteringMetrics.calinskiHarabaszIndex(features: features, labels: labels)
+        let db = ClusteringMetrics.daviesBouldinIndex(features: features, labels: labels)
+        return (ch, db)
+    }
 }
+

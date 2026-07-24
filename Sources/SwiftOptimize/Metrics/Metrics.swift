@@ -220,6 +220,28 @@ public enum Metrics {
         return zip(yTrue, yPred).map { abs($0 - $1) }.reduce(0, +) / Double(yTrue.count)
     }
 
+    /// F-beta score: weighted harmonic mean of precision and recall.
+    public static func fBetaScore(yTrue: [Int], yPred: [Int], label: Int, beta: Double = 1.0) -> Double {
+        let p = precision(yTrue: yTrue, yPred: yPred, label: label)
+        let r = recall(yTrue: yTrue, yPred: yPred, label: label)
+        let betaSq = beta * beta
+        let denom = (betaSq * p) + r
+        return denom == 0 ? 0 : (1.0 + betaSq) * (p * r) / denom
+    }
+
+    /// Computes Area Under the Precision-Recall Curve (PR-AUC) via trapezoidal integration.
+    public static func prAUC(yTrue: [Int], yScore: [Double]) -> Double {
+        let points = prCurve(yTrue: yTrue, yScore: yScore)
+        guard points.count >= 2 else { return 0 }
+        var auc = 0.0
+        for i in 1..<points.count {
+            let dx = abs(points[i].recall - points[i - 1].recall)
+            let avgY = (points[i].precision + points[i - 1].precision) / 2.0
+            auc += dx * avgY
+        }
+        return auc
+    }
+
     /// R² (coefficient of determination): fraction of variance explained.
     public static func r2Score(yTrue: [Double], yPred: [Double]) -> Double {
         guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
@@ -228,7 +250,45 @@ public enum Metrics {
         let ssRes = zip(yTrue, yPred).map { pow($0 - $1, 2) }.reduce(0, +)
         return ssTot == 0 ? 0 : 1.0 - ssRes / ssTot
     }
+
+    /// Adjusted R² Score considering sample size and number of features.
+    public static func adjustedR2Score(yTrue: [Double], yPred: [Double], numFeatures: Int) -> Double {
+        let r2 = r2Score(yTrue: yTrue, yPred: yPred)
+        let n = Double(yTrue.count)
+        let p = Double(numFeatures)
+        guard n > p + 1 else { return r2 }
+        return 1.0 - (1.0 - r2) * ((n - 1.0) / (n - p - 1.0))
+    }
+
+    /// MAPE (Mean Absolute Percentage Error).
+    public static func mape(yTrue: [Double], yPred: [Double]) -> Double {
+        guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
+        var total = 0.0
+        var validCount = 0
+        for (t, p) in zip(yTrue, yPred) {
+            if abs(t) > 1e-12 {
+                total += abs((t - p) / t)
+                validCount += 1
+            }
+        }
+        return validCount > 0 ? (total / Double(validCount)) * 100.0 : 0.0
+    }
+
+    /// Explained Variance Score.
+    public static func explainedVarianceScore(yTrue: [Double], yPred: [Double]) -> Double {
+        guard !yTrue.isEmpty, yTrue.count == yPred.count else { return 0 }
+        let residuals = zip(yTrue, yPred).map { $0 - $1 }
+        
+        let meanY = yTrue.reduce(0, +) / Double(yTrue.count)
+        let varY = yTrue.map { pow($0 - meanY, 2) }.reduce(0, +) / Double(yTrue.count)
+        
+        let meanRes = residuals.reduce(0, +) / Double(residuals.count)
+        let varRes = residuals.map { pow($0 - meanRes, 2) }.reduce(0, +) / Double(residuals.count)
+        
+        return varY == 0 ? 0.0 : 1.0 - (varRes / varY)
+    }
 }
+
 
 // MARK: - Pretty Printing Helper
 
