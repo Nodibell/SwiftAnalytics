@@ -55,8 +55,26 @@ struct DataFrameIOTests {
         #expect(actives == [true, false, true])
     }
 
+    @Test("CSV Reader Deduplicates Column Headers")
+    func testCSVReaderDeduplicateHeaders() async throws {
+        let csvContent = "age,age,age,\n25,30,35\n"
+        let fm = FileManager.default
+        let currentDir = URL(fileURLWithPath: fm.currentDirectoryPath)
+        let fileURL = currentDir.appendingPathComponent("test_dedup_headers.csv")
+
+        try csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
+        defer { try? fm.removeItem(at: fileURL) }
+
+        var options = CSVReadOptions()
+        options.hasHeader = true
+        let df = try await DataFrame(csv: fileURL, options: options)
+
+        #expect(df.columnNames == ["age", "age_1", "age_2", "col_3"])
+    }
+
     @Test("Read DataFrame from File URL via readURL")
     func testReadURL() async throws {
+
         let name = TypedColumn<String>(name: "category", values: ["News", "Sports"])
         let score = TypedColumn<Double>(name: "score", values: [0.95, 0.88])
         let df = try DataFrame(columns: [name, score])

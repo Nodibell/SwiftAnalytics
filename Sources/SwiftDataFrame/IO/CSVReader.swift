@@ -49,7 +49,8 @@ internal enum CSVReader {
             guard let basePtr = rawBuffer.baseAddress?.assumingMemoryBound(to: UInt8.self) else { return }
             let bufferPointer = UnsafeBufferPointer(start: basePtr, count: mappedData.count)
             if options.hasHeader {
-                headers = records[0].map { VectorizedByteParsers.parseString(buffer: bufferPointer, offset: $0) }
+                let rawHeaders = records[0].map { VectorizedByteParsers.parseString(buffer: bufferPointer, offset: $0) }
+                headers = deduplicateHeaders(rawHeaders)
                 startRowIdx = 1
             } else {
                 headers = records[0].indices.map { "col\($0)" }
@@ -642,5 +643,23 @@ internal enum CSVReader {
         }
 
         return lines
+    }
+
+    private static func deduplicateHeaders(_ rawHeaders: [String]) -> [String] {
+        var counts: [String: Int] = [:]
+        var result: [String] = []
+
+        for (i, h) in rawHeaders.enumerated() {
+            let trimmed = h.trimmingCharacters(in: .whitespacesAndNewlines)
+            let baseName = trimmed.isEmpty ? "col_\(i)" : trimmed
+            if let count = counts[baseName] {
+                counts[baseName] = count + 1
+                result.append("\(baseName)_\(count)")
+            } else {
+                counts[baseName] = 1
+                result.append(baseName)
+            }
+        }
+        return result
     }
 }
