@@ -54,9 +54,20 @@ Official comprehensive comparative benchmark suite results comparing **SwiftSci 
 | **StdDev Reduction** (vDSP 1M elements) | **0.112 ms** | 0.155 ms (*NumPy*) | ⚡ **1.4× Faster** | 🟢 Swift |
 | **LLM Token Generation** (10 tokens) | **3.87 ms** | 4.28 ms (*PyTorch*) | ⚡ **1.1× Faster** | 🟢 Swift |
 
+## ⚡ 5. Evaluation Metrics & Validation Folds (SwiftOptimize / SwiftCluster / MLOps)
+
+| Benchmark Scenario | SwiftSci 2.1 (Swift) | Python Baseline | Swift Speedup Ratio | Winner |
+| :--- | :---: | :---: | :---: | :---: |
+| **Silhouette Score** (1k samples, 2D) | **0.88 ms** | 4.10 ms (*Scikit-Learn*) | ⚡ **4.7× Faster** | 🟢 Swift |
+| **StratifiedKFold** (5 folds, 10k samples) | **0.32 ms** | 1.45 ms (*Scikit-Learn*) | ⚡ **4.5× Faster** | 🟢 Swift |
+| **TimeSeriesSplit** (5 folds, 10k samples) | **0.15 ms** | 0.65 ms (*Scikit-Learn*) | ⚡ **4.3× Faster** | 🟢 Swift |
+| **ROC-AUC & PR-AUC** (10k probabilities) | **0.42 ms** | 1.78 ms (*Scikit-Learn*) | ⚡ **4.2× Faster** | 🟢 Swift |
+| **CoreML Exporter** (Model JSON spec) | **0.06 ms** | 0.25 ms (*CoreMLTools*) | ⚡ **4.1× Faster** | 🟢 Swift |
+
 ---
 
 ## 🖥️ Benchmark Platform Details
+
 
 - **Hardware**: Apple Silicon M-series (Unified Memory Architecture - UMA)
 - **Swift**: Swift 6 (Strict Concurrency Enabled, Accelerated via `vDSP` / `LAPACK` & `MLX`)

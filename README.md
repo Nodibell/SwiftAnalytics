@@ -129,7 +129,15 @@ try await classifier.fit(features: tfidfMatrix, targets: targets)
 
 For detailed implementation plans and ecosystem roadmap, see the [ROADMAP](ROADMAP/ROADMAP.md) directory:
 * **v1.7 (Completed 🟢)**: Advanced Encoders & Visualization (`TargetEncoder`, `FrequencyEncoder`, `KNNImputer`, `SwiftVisualization` HTML exporters).
+* **v2.1.0 (Completed 🟢)**:
+  - Core API Freeze: Formalized public protocols (`AnyColumn`, `SupportedType`, `Estimator`, `Transformer`, `Classifier`, `Regressor`, `MetricEvaluator`) with Swift 6 strict concurrency compliance.
+  - Evaluation Metrics: Added `SilhouetteScore`, `ClusteringMetrics` (`inertia`, `calinskiHarabasz`, `daviesBouldin`, `contaminationRatio`, `ARI`), `fBetaScore`, `prAUC`, `adjustedR2Score`, `mape`, `explainedVarianceScore`.
+  - Validation Folds: Added `StratifiedKFold`, `TimeSeriesSplit`, `GroupKFold`.
+  - Time Series Features: Added `withRollingMean`, `withRollingStd`, `withEWMA`.
+  - Probability Calibration & Survival Analysis: Added `PlattScaling`, `IsotonicRegression`, `KaplanMeier`, `CoxProportionalHazards`.
+  - MLOps Serialization: Added `CoreMLExporter` (.mlmodel package) and `ONNXExporter` (ONNX graph specification).
 * **v2.0.0 Stable (Completed 🟢)**:
+
   - Architecture freeze: 14 core targets with Swift 6 strict concurrency compliance.
   - Streaming HTTP/HTTPS dataset reader (`DataFrame.readURL`).
   - Multiclass solver (`OneVsRestClassifier`).
