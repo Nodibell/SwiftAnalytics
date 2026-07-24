@@ -6,33 +6,32 @@
 
 ## 📊 Поточний Статус
 
-| Модуль                   | Версія | Статус      |
-| ------------------------------ | ------------ | ----------------- |
-| Package Bootstrap              | 0.0          | 🟢 Completed      |
-| `SwiftDataFrame`             | 0.1          | 🟢 Completed      |
-| `SwiftStats`                 | 0.1          | 🟢 Completed      |
-| `SwiftPreprocessing`         | 0.2          | 🟢 Completed      |
-| `SwiftML`                    | 0.2          | 🟢 Completed      |
-| `SwiftCluster`               | 0.3          | 🟢 Completed      |
-| `SwiftML` Concurrency        | 0.4          | 🟢 Completed      |
-| `SwiftOptimize`              | 0.5          | 🟢 Completed      |
-| `SwiftForecast`              | 0.6          | 🟢 Completed      |
-| Testing & Benchmarks           | 0.7          | 🟢 Completed      |
-| Hardware Routing               | 0.8          | 🟢 Completed      |
-| API Stabilization & Docs       | 0.9          | 🟢 Completed      |
-| `SwiftExplain`               | 1.0          | 🟢 Completed      |
-| `SwiftLLM` / `SwiftVision` | 1.0          | 🟢 Completed      |
-| `SwiftPrivacy`               | 1.0          | 🟠 Removed in 1.1 |
-| Streaming I/O & SafeTensors    | 1.1          | 🟢 Completed      |
-| SwiftSci Rename & Refactor     | 1.2          | 🟢 Completed (plan 12)|
-| Sklearn Parity Roadmap         | 1.3          | 🟢 Completed (plan 13)|
-| High-Performance Engine & Quality| 1.4        | 🟢 Completed (plan 14)|
-| Engine Overhaul & DocC Sprint  | 1.5          | 🟢 Completed (plan 15)|
-| DataFrame ↔ ML Bridge & Hygiene| 1.6          | 🟢 Completed (plan 16)|
-| Advanced Encoders & Visualization| 1.7        | 🟢 Completed (plan 17)|
-| `SwiftSci 2.0 & Saura Engine`    | 2.0          | 🟢 Completed (plan 20)|
-| `Evaluation Metrics & Core Freeze` | 2.1       | 🟢 Completed (plan 21)|
-
+| Модуль                         | Версія | Статус           |
+| ------------------------------------ | ------------ | ---------------------- |
+| Package Bootstrap                    | 0.0          | 🟢 Completed           |
+| `SwiftDataFrame`                   | 0.1          | 🟢 Completed           |
+| `SwiftStats`                       | 0.1          | 🟢 Completed           |
+| `SwiftPreprocessing`               | 0.2          | 🟢 Completed           |
+| `SwiftML`                          | 0.2          | 🟢 Completed           |
+| `SwiftCluster`                     | 0.3          | 🟢 Completed           |
+| `SwiftML` Concurrency              | 0.4          | 🟢 Completed           |
+| `SwiftOptimize`                    | 0.5          | 🟢 Completed           |
+| `SwiftForecast`                    | 0.6          | 🟢 Completed           |
+| Testing & Benchmarks                 | 0.7          | 🟢 Completed           |
+| Hardware Routing                     | 0.8          | 🟢 Completed           |
+| API Stabilization & Docs             | 0.9          | 🟢 Completed           |
+| `SwiftExplain`                     | 1.0          | 🟢 Completed           |
+| `SwiftLLM` / `SwiftVision`       | 1.0          | 🟢 Completed           |
+| `SwiftPrivacy`                     | 1.0          | 🟠 Removed in 1.1      |
+| Streaming I/O & SafeTensors          | 1.1          | 🟢 Completed           |
+| SwiftSci Rename & Refactor           | 1.2          | 🟢 Completed (plan 12) |
+| Sklearn Parity Roadmap               | 1.3          | 🟢 Completed (plan 13) |
+| High-Performance Engine & Quality    | 1.4          | 🟢 Completed (plan 14) |
+| Engine Overhaul & DocC Sprint        | 1.5          | 🟢 Completed (plan 15) |
+| DataFrame ↔ ML Bridge & Hygiene     | 1.6          | 🟢 Completed (plan 16) |
+| Advanced Encoders & Visualization    | 1.7          | 🟢 Completed (plan 17) |
+| `SwiftSci 2.0 & Saura Engine`      | 2.0          | 🟢 Completed (plan 20) |
+| `Evaluation Metrics & Core Freeze` | 2.1          | 🟢 Completed (plan 21) |
 
 ---
 
@@ -167,7 +166,6 @@
 
 ### Версія 1.2: Перейменування SwiftSci, `addColumn` та Рефакторинг *(🟢 Completed)*
 
-*Детальний план впровадження:* [implementation_plan_12.md](file:///Users/oleksiichumak/Developer/Xcode.projects/SwiftAnalytics/ROADMAP/implementation_plan_12.md)
 * **Перейменування пакета:** Зміна назви з `SwiftAnalytics` на `SwiftSci`.
 * **Форма Джозефа для Kalman Filter:** Оновлення коваріації `P` для запобігання накопиченню похибок округлення.
 * **BPE-токенізатор на UTF-8 байтах:** Перехід від Character/grapheme clusters на byte-level BPE для коректної токенізації non-ASCII тексту.
@@ -176,7 +174,6 @@
 
 ### Версія 1.3: Sklearn Parity Roadmap *(🟢 Completed)*
 
-*Детальний план впровадження:* [implementation_plan_13.md](implementation_plan_13.md)
 * **Уніфікація Pipeline ↔ Estimator:** `ClassificationPipeline` та `RegressionPipeline` для стикування препроцесингу з фінальним класифікатором/регресором без витоку даних.
 * **`ColumnTransformer`:** Маршрутизація підмножин колонок DataFrame до окремих трансформерів передобробки.
 * **`RandomizedSearchCV`:** Паралельний рандомізований пошук гіперпараметрів із `KFold` крос-валідацією.
@@ -190,7 +187,6 @@
 
 ### Версія 1.4: High-Performance Engine, Quality & Multi-Module DocC *(🟢 Completed)*
 
-*Детальний план впровадження:* [implementation_plan_14.md](implementation_plan_14.md)
 * **`SystemsCSVParser` (`SwiftDataFrame`):** High-performance zero-copy memory-mapped RFC 4180 DFA byte parser (`SystemsCSVParser`), що прискорює зчитування CSV-файлів ~10×.
 * **Vectorized Byte Parsers (`SwiftDataFrame`):** Векторизовані парсери чисел та стрічок (`VectorizedByteParsers`) без виділення додаткової пам'яті.
 * **vDSP Редукції (`SwiftDataFrame`):** Прискорення `mean()`, `variance()`, `stdDev()` у `TypedColumn<Double>` через Accelerate `vDSP`.
@@ -201,9 +197,8 @@
 * **Віконні функції часових рядів (`SwiftForecast`):** Додано `ExpandingWindow` для кумулятивних часових рядів.
 * **Багатомодульна DocC Документація:** Інтегровано `swift-docc-plugin` (`v1.5.0`) та створено об'єднаний сайт документації з усіх 10 модулів екосистеми з публікацією на GitHub Pages.
 
-### Версія 1.5: DataFrame Engine Overhaul, Parallel I/O & Accelerate-Native Algorithms *(🟡 In Progress)*
+### Версія 1.5: DataFrame Engine Overhaul, Parallel I/O & Accelerate-Native Algorithms *(🟢Completed))*
 
-*Детальний план впровадження:* [implementation_plan_15.md](implementation_plan_15.md)
 * **Оптимізація I/O та парсингу (`SwiftDataFrame`):** Двофазний паралельний колонковий будівельник без проміжних `String`-виділень пам'яті (`SystemsCSVParser` + `VectorizedByteParsers`), mmap-потоковий парсер (`readStream`).
 * **Фільтрація та сортування без бітмапів (`SwiftDataFrame`):** Векторизовані індекси `filteredIndices` з `SIMD8<Int64>` замість масок `[Bool]`; `parallelGathered(at:)` та `vDSP_vgathrD` для сортування.
 * **Прискорення алгоритмів (`SwiftCluster`, `SwiftForecast`):** Апаратна маршрутизація та `vDSP_distancesqD` для KMeans на CPU; коваріаційний SVD (`cblas_dsyrk` + `dsyevd_`) у PCA для $p \le n$; повна векторизація декомпозиції часових рядів через `vDSP`.
@@ -214,8 +209,6 @@
 * **DocC Documentation Sprint:** Покриття doc-коментарями до $\ge 80\%$ усіх публічних символів 10 модулів, створення 3 статей (*Getting Started*, *ML Workflow*, *Time Series*) та оновлення головної сторінки документації.
 
 ### Версія 2.0: SwiftSci 2.0 Architecture & Saura Engine Integration *(🟢 Completed)*
-
-*Детальний план впровадження:* [implementation_plan_20.md](implementation_plan_20.md)
 
 Повний архітектурний оверхол бібліотеки SwiftSci для переходу на версію 2.0 та безпосередньої підтримки міграції застосунку Aura на нативний Swift (`Saura`):
 
@@ -244,9 +237,6 @@
 
 ### Версія 2.1: Evaluation Metrics, Core API Freeze & MLOps Infrastructure *(🟢 Completed)*
 
-
-*Детальний план впровадження:* [implementation_plan_21.md](implementation_plan_21.md)
-
 1. **Core API Freeze & Deprecation Governance**
    - Фіксація публічних протоколів (`AnyColumn`, `SupportedType`, `Estimator`, `Transformer`, `Classifier`, `Regressor`, `MetricEvaluator`).
    - Позначення застарілих патернів v1.x через `@available(*, deprecated, message: "...")` warnings.
@@ -268,8 +258,6 @@
    - Динамічний вибір колонок метрик у `ModelLeaderboardView.swift`.
 8. **DataFrame Engine**
    - Автоматична дедуплікація дубльованих та порожніх колонок під час зчитування CSV (`CSVReader.deduplicateHeaders`).
-
-
 
 ---
 
