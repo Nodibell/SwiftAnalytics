@@ -31,7 +31,8 @@
 | DataFrame ↔ ML Bridge & Hygiene| 1.6          | 🟢 Completed (plan 16)|
 | Advanced Encoders & Visualization| 1.7        | 🟢 Completed (plan 17)|
 | `SwiftSci 2.0 & Saura Engine`    | 2.0          | 🟢 Completed (plan 20)|
-| `Evaluation Metrics & Core Freeze` | 2.1       | 🟡 In Progress (plan 21)|
+| `Evaluation Metrics & Core Freeze` | 2.1       | 🟢 Completed (plan 21)|
+
 
 ---
 
@@ -241,7 +242,8 @@
    * Повне розширення executable-сьюту `SwiftAnalyticsBenchmarks` для всіх нових модулів.
    * 100% покриття DocC-коментарями (`///`) та генерація об'єднаного сайту документації.
 
-### Версія 2.1: Evaluation Metrics, Core API Freeze & MLOps Infrastructure *(🟡 In Progress)*
+### Версія 2.1: Evaluation Metrics, Core API Freeze & MLOps Infrastructure *(🟢 Completed)*
+
 
 *Детальний план впровадження:* [implementation_plan_21.md](implementation_plan_21.md)
 
